@@ -1,0 +1,98 @@
+// schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             Int        @id @default(autoincrement())
+  username       String     @unique
+  email          String     @unique
+  hashedPassword String
+  walletAddress   String     @unique
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  players        Player[]
+}
+
+model Game {
+  id          Int          @id @default(autoincrement())
+  title       String
+  description String
+  maxPlayers  Int
+  settings    Json
+  sessions    GameSession[]
+}
+
+model GameSession {
+  id        Int        @id @default(autoincrement())
+  gameId    Int
+  startTime DateTime   @default(now())
+  endTime   DateTime?
+  status    String     // e.g., 'active', 'completed'
+  players   Player[]
+  game      Game       @relation(fields: [gameId], references: [id])
+
+  Message Message[]
+
+  Score Score[]
+}
+
+model Player {
+  id          Int        @id @default(autoincrement())
+  userId      Int
+  sessionId   Int
+  role        String     // e.g., 'admin', 'player'
+  inGameStats Json
+  inventory   Json
+  scores      Score[]
+  nfts        PlayerNFT[]
+  user        User       @relation(fields: [userId], references: [id])
+  session     GameSession @relation(fields: [sessionId], references: [id])
+
+  Message Message[]
+}
+
+model NFTItem {
+  id                Int        @id @default(autoincrement())
+  metadataURI      String
+  rarity            String
+  attributes        Json
+  tokenContractAddress String
+  playersNFTs      PlayerNFT[]
+}
+
+model PlayerNFT {
+  id             Int        @id @default(autoincrement())
+  playerId       Int
+  nftItemId      Int
+  ownershipCount  Int       @default(1)
+  isEquipped      Boolean    @default(false)
+  player          Player     @relation(fields: [playerId], references: [id])
+  nftItem        NFTItem    @relation(fields: [nftItemId], references: [id])
+}
+
+model Message {
+  id          Int        @id @default(autoincrement())
+  sessionId   Int
+  playerId    Int
+  content     String
+  timestamp   DateTime   @default(now())
+  session     GameSession @relation(fields: [sessionId], references: [id])
+  player      Player      @relation(fields: [playerId], references: [id])
+}
+
+model Score {
+  id          Int        @id @default(autoincrement())
+  sessionId   Int
+  playerId    Int
+  score       Int
+  timestamp   DateTime   @default(now())
+  session     GameSession @relation(fields: [sessionId], references: [id])
+  player      Player      @relation(fields: [playerId], references: [id])
+}
