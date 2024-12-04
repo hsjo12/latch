@@ -90,12 +90,13 @@ export default class CommonScene extends Phaser.Scene {
     objectLayer
         .setScale(1, 1)
         .setOrigin(0, 0)
-        .setCollisionByProperty({ collider: true });
+        .setCollisionByProperty({ collider: true,  });
 
     // const tileset2 = map.addTilesetImage("pillars", "pillars");
     // const layer3 = map.createLayer("pillars", tileset2, 0, 0);
     // layer3.setScale(1, 1).setOrigin(0, 0);
     // layer3.setCollisionByProperty({ collider: true });
+
 
     this.player = this.physics.add
         .sprite(
@@ -116,8 +117,13 @@ export default class CommonScene extends Phaser.Scene {
       repeat: -1,
     });
 
-    this.physics.add.collider(this.player, layer1);
-    this.physics.add.collider(this.player, objectLayer);
+    this.physics.add.collider(this.player, layer1, );
+    this.physics.add.collider(this.player, objectLayer, (a, b)=>{
+     if(b?.properties?.dungeon){
+       this.scene.start('DungeonScene')
+     }
+
+    });
 
     this.cameras.main.startFollow(this.player, true)
 
