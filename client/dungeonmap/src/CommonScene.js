@@ -119,6 +119,8 @@ export default class CommonScene extends Phaser.Scene {
     this.physics.add.collider(this.player, layer1);
     this.physics.add.collider(this.player, objectLayer);
 
+    this.cameras.main.startFollow(this.player, true)
+
     this.anims.create({
       key: "idleRight",
       frames: this.anims.generateFrameNumbers("player", { start: 6, end: 11 }),
