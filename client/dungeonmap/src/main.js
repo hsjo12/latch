@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import Preloader from "./Preloader.js";
+import DungeonScene from "./DungeonScene.js";
 
 export default new Phaser.Game({
   type: Phaser.AUTO,
@@ -12,7 +12,7 @@ export default new Phaser.Game({
       debug: true,
     },
   },
-  scene: [Preloader],
+  scene: [DungeonScene],
   scale: {
     zoom: 3,
   },

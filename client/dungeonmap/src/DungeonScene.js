@@ -1,16 +1,16 @@
 import Phaser from "phaser";
 import Level from "./Level.js";
 
-export default class Preloader extends Phaser.Scene {
+export default class DungeonScene extends Phaser.Scene {
   constructor() {
-    super("preloader");
+    super("DungeonScene");
     this.player = null;
     this.level = new Level();
     this.spike = null;
   }
 
   preload() {
-    this.load.image("tiles", "/assets/Dungeon_1.png");
+    this.load.image("Dungeon_1", "/assets/Dungeon_1.png");
     this.load.image("windows", "/assets/Dungeon_2_Arch_small.png");
     this.load.image("pillars", "/assets/Dungeon_2_Pillars.png");
     this.load.image("objects", "/assets/Dungeon_Objects.png");
@@ -29,25 +29,26 @@ export default class Preloader extends Phaser.Scene {
 
   create() {
     const map = this.make.tilemap({ key: "dungeon" });
-    const tileset = map.addTilesetImage("Dungeon_1", "tiles");
-    const layer1 = map.createLayer("Tile Layer 1", [tileset], 0, -100);
-    layer1.setScale(1, 2).setOrigin(0, 0);
+    const floor = map.addTilesetImage("Dungeon_1", "Dungeon_1");
+    const floorLayer = map.createLayer("Tile Layer 1", [floor], 0, -100);
+    floorLayer.setScale(1, 2).setOrigin(0, 0);
 
-    const tileset1 = map.addTilesetImage("windows", "windows");
-    const layer2 = map.createLayer("windows", [tileset1], 0, 0);
-    layer2.setScale(1, 1).setOrigin(0, 0);
-    const tileset2 = map.addTilesetImage("pillars", "pillars");
-    const layer3 = map.createLayer("pillars", tileset2, 0, 0);
-    layer3.setScale(1, 1).setOrigin(0, 0);
-    layer3.setCollisionByProperty({ collider: true });
+    const windows = map.addTilesetImage("windows", "windows");
+    const windowsLayer = map.createLayer("windows", [windows], 0, 0);
+    windowsLayer.setScale(1, 1).setOrigin(0, 0);
 
-    const tileset3 = map.addTilesetImage("objects", "objects");
-    const tileset4 = map.addTilesetImage("spikes", "spikes");
-    const layer4 = map.createLayer("objects", [tileset3, tileset4], 0, 0);
-    layer4
-      .setScale(1, 1)
-      .setOrigin(0, 0)
-      .setCollisionByProperty({ collider: true });
+    const pillars = map.addTilesetImage("pillars", "pillars");
+    const pillarLayer = map.createLayer("pillars", pillars, 0, 0);
+    pillarLayer.setScale(1, 1).setOrigin(0, 0);
+    pillarLayer.setCollisionByProperty({ collider: true });
+
+    const objects = map.addTilesetImage("objects", "objects");
+    const spikes = map.addTilesetImage("spikes", "spikes");
+    const objectLayer = map.createLayer("objects", [objects, spikes], 0, 0);
+    objectLayer
+        .setScale(1, 1)
+        .setOrigin(0, 0)
+        .setCollisionByProperty({ collider: true });
     // this.spike = this.physics.add.image(
     //   this.game.config.width / 2 - 70,
     //   this.game.config.height / 2 - 25,
@@ -63,12 +64,12 @@ export default class Preloader extends Phaser.Scene {
     // this.spike.play("spike-anim", true);
 
     this.player = this.physics.add
-      .sprite(
-        this.game.config.width / 2 - 50,
-        this.game.config.height / 2 - 35,
-        "player",
-      )
-      .setScale(1);
+        .sprite(
+            this.game.config.width / 2 - 50,
+            this.game.config.height / 2 - 35,
+            "player",
+        )
+        .setScale(1);
 
     this.player.setScale(1); // Scale the player sprite by 1.5 times
     this.player.setBodySize(24, 28);
@@ -81,8 +82,8 @@ export default class Preloader extends Phaser.Scene {
       repeat: -1,
     });
 
-    this.physics.add.collider(this.player, layer3);
-    this.physics.add.collider(this.player, layer4);
+    this.physics.add.collider(this.player, pillarLayer);
+    this.physics.add.collider(this.player, objectLayer);
 
     this.anims.create({
       key: "idleRight",
@@ -197,10 +198,10 @@ export default class Preloader extends Phaser.Scene {
 
     // If no movement keys are pressed, stop the animation
     if (
-      this.cursors.left.isUp &&
-      this.cursors.right.isUp &&
-      this.cursors.up.isUp &&
-      this.cursors.down.isUp
+        this.cursors.left.isUp &&
+        this.cursors.right.isUp &&
+        this.cursors.up.isUp &&
+        this.cursors.down.isUp
     ) {
       this.player.anims.stop();
 
