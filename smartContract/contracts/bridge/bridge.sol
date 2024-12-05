@@ -11,8 +11,12 @@ contract Bridge is IERC721Receiver {
     event Import(address indexed user, address indexed item, uint256 indexed tokenId);
     event Export(address indexed user, address indexed item, uint256 indexed tokenId);
 
+    // user => item address
+    mapping(address => address[]) importedItemAddrs;
+    mapping(address => mapping(address => uint256)) private itemAddressIndex;
+
     // user => item => ids 
-    mapping(address => mapping(address => uint256[])) importedItems;
+    mapping(address => mapping(address => uint256[])) importedItemIds;
 
     // user => item => tokenId => index
     mapping(address => mapping(address => mapping(uint256 => uint256))) private tokenIndex;
@@ -40,9 +44,20 @@ contract Bridge is IERC721Receiver {
 
     function _importItem(address _item, uint256 _tokenId) private {
         IERC721A(_item).safeTransferFrom(msg.sender, address(this), _tokenId, "");
-        importedItems[msg.sender][_item].push(_tokenId);
+       
+        uint256[] storage items = importedItemIds[msg.sender][_item];
+
+        if(items.length == 0) {
+            itemAddressIndex[msg.sender][_item] = importedItemAddrs[msg.sender].length;
+            importedItemAddrs[msg.sender].push(_item);
+        }
+
+        tokenIndex[msg.sender][_item][_tokenId] = items.length;
+        items.push(_tokenId);
         emit Import(msg.sender, _item, _tokenId);
     }
+
+
 
     function exportItem(address _item, uint256 _tokenId) external {
         _exportItem(_item, _tokenId);
@@ -65,12 +80,12 @@ contract Bridge is IERC721Receiver {
     }
 
     function _exportItem(address _item, uint256 _tokenId) private {
-        uint256[] storage items = importedItems[msg.sender][_item];
+        uint256[] storage items = importedItemIds[msg.sender][_item];
         mapping(uint256 => uint256) storage itemIndex = tokenIndex[msg.sender][_item];
 
         uint256 size = items.length;
         // Ensure the token exists
-        if(itemIndex[_tokenId] < size) revert NonExistentItem();
+        if(itemIndex[_tokenId] > size) revert NonExistentItem();
        
         // Get the index of the tokenId to remove
         uint256 indexToRemove = itemIndex[_tokenId];
@@ -89,6 +104,20 @@ contract Bridge is IERC721Receiver {
         // Delete the tokenId from the indices mapping
         delete itemIndex[_tokenId];
 
+        if(items.length == 0) {
+            indexToRemove = itemAddressIndex[msg.sender][_item];
+            lastIndex = importedItemAddrs[msg.sender].length - 1;
+
+            if (indexToRemove != lastIndex) {
+                address lastItemAddress = importedItemAddrs[msg.sender][lastIndex];
+                importedItemAddrs[msg.sender][indexToRemove] = lastItemAddress;
+                itemAddressIndex[msg.sender][lastItemAddress] = indexToRemove;
+            }
+
+            importedItemAddrs[msg.sender].pop();
+            delete itemAddressIndex[msg.sender][_item];
+        }
+
         // Transfer the token back to the user
         IERC721A(_item).safeTransferFrom(address(this), msg.sender, _tokenId, "");
 
@@ -106,6 +135,67 @@ contract Bridge is IERC721Receiver {
         return IERC721Receiver.onERC721Received.selector;
     }
 
+    function importedUserItemList(
+        address _user,
+        address _item,
+        uint256 _offset,
+        uint256 _size 
+    )
+        external
+        view
+        returns (
+            uint256[] memory list
+        )
+    {
+        uint256[] storage importedItemIdList = importedItemIds[_user][_item];
+        uint256 length = importedItemIdList.length;
 
+        _size = length > _size + _offset ? _size : length - _offset;
+        list = new uint256[](_size);  
+        for(uint256 i; i < _size; i++) {
+            list[i] = importedItemIdList[_offset++];
+        }   
+    }
 
+    function totalImportedUserItem(
+        address _user, 
+        address _item
+    ) 
+        external
+        view
+        returns (uint256) 
+    {
+        return importedItemIds[_user][_item].length;
+    } 
+
+    function importedUserItemAddress(
+        address _user,
+        uint256 _offset,
+        uint256 _size 
+    )
+        external
+        view
+        returns (
+            address[] memory list
+        )
+    {
+        address[] storage importedItemAddrList = importedItemAddrs[_user];
+        uint256 length = importedItemAddrList.length;
+
+        _size = length > _size + _offset ? _size : length - _offset;
+        list = new address[](_size);  
+        for(uint256 i; i < _size; i++) {
+            list[i] = importedItemAddrList[_offset++];
+        }   
+    }
+
+    function totalImportedUserItemAddress(
+        address _user 
+    ) 
+        external
+        view
+        returns (uint256) 
+    {
+        return importedItemAddrs[_user].length;
+    } 
 }

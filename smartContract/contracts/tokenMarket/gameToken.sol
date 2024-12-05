@@ -8,9 +8,8 @@ contract GameToken is  ERC20, ERC20Burnable, AccessControl {
     // keccak256("TOKEN_MINTER");
     bytes32 constant TOKEN_MINTER = 0x262c70cb68844873654dc54487b634cb00850c1e13c785cd0d96a2b89b829472;
 
-    constructor(address _tokenSale) ERC20("GameToken","GT") {
+    constructor() ERC20("GameToken","GT") {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _grantRole(TOKEN_MINTER, _tokenSale);
     }
 
     function mint(
