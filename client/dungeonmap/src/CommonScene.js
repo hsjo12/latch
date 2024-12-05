@@ -28,7 +28,7 @@ export default class CommonScene extends Phaser.Scene {
     this.load.image("With_Hut", "/assets/With_Hut.png");
 
     this.load.tilemapTiledJSON("common", "assets/common.json");
-    this.load.spritesheet("player", "assets/orc.png", {
+    this.load.spritesheet("player", "assets/Spearman.png", {
       frameWidth: 48,
       frameHeight: 48,
     });
@@ -62,6 +62,9 @@ export default class CommonScene extends Phaser.Scene {
         .setScale(1, 1)
         .setOrigin(0, 0)
         .setCollisionByProperty({ collider: true });
+
+
+
 
     const Fountain = map.addTilesetImage("Fountain", "Fountain");
     const Barn = map.addTilesetImage("Barn", "Barn");
@@ -97,11 +100,10 @@ export default class CommonScene extends Phaser.Scene {
     // layer3.setScale(1, 1).setOrigin(0, 0);
     // layer3.setCollisionByProperty({ collider: true });
 
-
     this.player = this.physics.add
         .sprite(
-            this.game.config.width / 2 - 50,
-            this.game.config.height / 2 - 35,
+            this.game.config.width /2,
+            this.game.config.height/2,
             "player",
         )
         .setScale(1);
@@ -125,7 +127,10 @@ export default class CommonScene extends Phaser.Scene {
 
     });
 
+
+    // this.cameras.main.setBounds(0, 0, +this.game.config.width, +this.game.config.height);
     this.cameras.main.startFollow(this.player, true)
+    this.cameras.main.setFollowOffset(-50,-50)
 
     this.anims.create({
       key: "idleRight",

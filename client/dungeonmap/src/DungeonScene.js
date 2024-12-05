@@ -16,7 +16,7 @@ export default class DungeonScene extends Phaser.Scene {
     this.load.image("objects", "/assets/Dungeon_Objects.png");
     this.load.image("spikes", "/assets/Floor_spikes_1.png");
     this.load.tilemapTiledJSON("dungeon", "assets/dmap.json");
-    this.load.spritesheet("player", "assets/orc.png", {
+    this.load.spritesheet("player", "assets/Spearman.png", {
       frameWidth: 48,
       frameHeight: 48,
     });
@@ -28,6 +28,7 @@ export default class DungeonScene extends Phaser.Scene {
   }
 
   create() {
+this.game.scale.resize(256,256)
     const map = this.make.tilemap({ key: "dungeon" });
     const floor = map.addTilesetImage("Dungeon_1", "Dungeon_1");
     const floorLayer = map.createLayer("Tile Layer 1", [floor], 0, -100);
@@ -65,8 +66,8 @@ export default class DungeonScene extends Phaser.Scene {
 
     this.player = this.physics.add
         .sprite(
-            this.game.config.width / 2 - 50,
-            this.game.config.height / 2 - 35,
+            256/2 - 50,
+            256/2 - 35,
             "player",
         )
         .setScale(1);
@@ -122,14 +123,14 @@ export default class DungeonScene extends Phaser.Scene {
 
     this.anims.create({
       key: "attackDown",
-      frames: this.anims.generateFrameNumbers("player", { start: 36, end: 39 }),
+      frames: this.anims.generateFrameNumbers("player", { start: 36, end: 41 }),
       frameRate: 10,
-      repeat: -1,
+      repeat: 1,
     });
 
     this.anims.create({
       key: "attackRight",
-      frames: this.anims.generateFrameNumbers("player", { start: 42, end: 45 }),
+      frames: this.anims.generateFrameNumbers("player", { start: 42, end: 47 }),
       frameRate: 10,
       repeat: -1,
     });
@@ -155,6 +156,11 @@ export default class DungeonScene extends Phaser.Scene {
     const prevVelocity = this.player.body.velocity.clone();
     let newX = this.player.x;
     let newY = this.player.y;
+
+      // this.input.keyboard.addListener("keydown-F", (e) => {
+      //     console.log(e)
+      //     this.player.play("attackRight");
+      // })
 
     // Stop any previous movement from the last frame
     this.player.body.setVelocity(0);
@@ -218,5 +224,7 @@ export default class DungeonScene extends Phaser.Scene {
         this.player.anims.play("idleDown", true);
       }
     }
+
+
   }
 }
