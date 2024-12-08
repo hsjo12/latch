@@ -1,18 +1,17 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.27;
 
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import { ERC721AQueryable, ERC721A, IERC721A } from "erc721a/contracts/extensions/ERC721AQueryable.sol";
-import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { IGasback } from "../interfaces/IGasback.sol";
-contract Items is  ERC721AQueryable, AccessControl {
+import {ERC1155} from "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155URIStorage.sol";
+import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IGasback} from "../interfaces/IGasback.sol";
+
+contract Items is  ERC1155, AccessControl {
 
     bytes32 constant TOKEN_MINTER = 0x262c70cb68844873654dc54487b634cb00850c1e13c785cd0d96a2b89b829472;
     bytes32 constant MANAGER = 0xaf290d8680820aad922855f39b306097b20e28774d6c1ad35a20325630c3a02c;
-    uint256 public constant WEAPON = 1;
-    uint256 public constant ARMOUR = 2;
-    uint256 public constant BOOTS = 3;
 
     IGasback public immutable gasback;
     
@@ -26,25 +25,21 @@ contract Items is  ERC721AQueryable, AccessControl {
         uint64 durability;
     }
 
-    struct Item {
-        uint256 itemType;
-        Stats stats;
-    }
-
     mapping(uint256 => string) public tokenURIByItemType;
-    mapping(uint256 => Item) public itemInfo;
+    mapping(uint256 => Stats) public itemInfo;
     uint256 public price = 1 ether;
     address public teamVault;
     address public owner;
     IERC20 public gameToken;
-
+    string public baseURI;
+    
     constructor(
         IGasback _gasback,
         IERC20 _gameToken,
         address _item_minter,
         address _teamVault
     ) 
-        ERC721A("Items", "Items") 
+        ERC1155("") 
     {
         gasback = _gasback;
         owner = msg.sender;
@@ -58,30 +53,24 @@ contract Items is  ERC721AQueryable, AccessControl {
     function registerForGasback() public onlyRole(DEFAULT_ADMIN_ROLE) {
         gasback.register(owner, address(this));
     }
-
-    function requireMint(uint256 _quantity) external {
+    
+    function mintItems(uint256 _id, uint256 _quantity) external {
         gameToken.transferFrom(msg.sender, teamVault, _quantity * price);
-        emit MintRequested(msg.sender, _quantity);
+        _mint(msg.sender, _id, _quantity, ""); 
     }
 
-    function mintItems(
-        address _receiver,
-        uint256[] calldata _itemType,
-        Stats[] calldata _stats
+    function setItemStats(
+        uint256[] calldata _idList, 
+        Stats[] calldata _statsList
     ) 
         external 
-        onlyRole(TOKEN_MINTER)
+        onlyRole(MANAGER) 
     {
-        uint256 startTokenId = _nextTokenId();
-        uint256 size = _itemType.length;
+        uint256 size = _idList.length;
         for(uint256 i; i < size; i++) {
-            itemInfo[startTokenId++] = Item({
-                itemType: _itemType[i],
-                stats: _stats[i]
-            });
+            itemInfo[_idList[i]] = _statsList[i];
         }
-        _mint(_receiver, size);  
-        emit ItemMinted(_receiver, size);     
+        
     }
 
     function setPrice(
@@ -120,14 +109,14 @@ contract Items is  ERC721AQueryable, AccessControl {
         gameToken = _gameToken;
     }
 
-    function setTokenURIById(
-        uint256 _itemType,
-        string calldata _uri
-    ) 
-        external 
-        onlyRole(MANAGER) 
-    {
-        tokenURIByItemType[_itemType] = _uri;
+    function setBaseURI(string memory _baseURI) external onlyRole(MANAGER) {
+        baseURI = _baseURI;
+    }
+
+    function uri(uint256 _tokenId) public view override returns (string memory) {
+        return bytes(baseURI).length > 0 
+            ? string.concat(baseURI, Strings.toString(_tokenId), ".json") 
+            : "";
     }
 
     function getItemInfoList(
@@ -135,25 +124,13 @@ contract Items is  ERC721AQueryable, AccessControl {
     ) 
         external 
         view 
-        returns(Item[] memory _itemInfoList) 
+        returns (Stats[] memory _itemInfoList) 
     {
         uint256 size = _id.length;
-        _itemInfoList = new Item[](size);
-        for(uint256 i; i < size; i++) {
+        _itemInfoList = new Stats[](size);
+        for (uint256 i; i < size; i++) {
             _itemInfoList[i] = itemInfo[_id[i]];
         }
-    }
- 
-    function tokenURI(
-        uint256 _tokenId
-    ) 
-        public 
-        view 
-        override(ERC721A, IERC721A) 
-        returns (string memory) 
-    {
-        if (!_exists(_tokenId)) _revert(URIQueryForNonexistentToken.selector);
-        return tokenURIByItemType[itemInfo[_tokenId].itemType];
     }
 
     function supportsInterface(
@@ -161,11 +138,9 @@ contract Items is  ERC721AQueryable, AccessControl {
     ) 
         public 
         view 
-        override(AccessControl, IERC721A, ERC721A) 
+        override(AccessControl, ERC1155) 
         returns (bool) 
     {
         return super.supportsInterface(interfaceId);
     }
-   
-
 }

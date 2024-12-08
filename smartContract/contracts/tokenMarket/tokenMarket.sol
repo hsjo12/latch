@@ -31,7 +31,7 @@ contract TokenMarket is ReentrancyGuard, AccessControl {
         // Calculate the required ETH for the requested token amount
         uint256 requiredETH = (_amount * pricePerToken) / 1e18;
         if (requiredETH == 0) revert tooSmallAmount();
-        if(msg.value < requiredETH) revert insufficientAmount();
+        if (msg.value < requiredETH) revert insufficientAmount();
 
         // Mint the requested amount of tokens to the sender
         SALE_TOKEN.mint(msg.sender, _amount);
@@ -62,7 +62,7 @@ contract TokenMarket is ReentrancyGuard, AccessControl {
 
     function transferETH(uint256 _amount) private {
         (bool _isOk,) = msg.sender.call{value:_amount}(""); 
-        if(!_isOk) revert transactionFailed();   
+        if (!_isOk) revert transactionFailed();   
     }
 
     function setPricePerToken(

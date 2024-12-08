@@ -16,7 +16,7 @@ const contract = new ethers.Contract(itemAddress, itemJson.abi, signer);
 let processedTxHashes = new Set();
 
 // Listen to the RequiredMints event
-contract.on("RequiredMints", async (user, quantity) => {
+contract.on("MintRequested", async (user, quantity) => {
   console.log(
     `Received RequiredMints event for user: ${user} with quantity: ${quantity}`
   );

@@ -4,6 +4,9 @@ import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol"
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IPvpAndRaidVault } from "../interfaces/IPvpAndRaidVault.sol";
 import { IRaidPrize } from "../interfaces/IRaidPrize.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { IERC1155 } from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
+
 contract Raid is AccessControl, IRaidPrize {
 
     bytes32 constant MANAGER = 0xaf290d8680820aad922855f39b306097b20e28774d6c1ad35a20325630c3a02c;
@@ -16,14 +19,15 @@ contract Raid is AccessControl, IRaidPrize {
     error RaidNotCompleted();
     error UserNotParticipated();
     error PrizeAlreadyClaimed();
+    error NoRemainingPrize();
 
     event Create(uint256 indexed id, address indexed creator);
     event Join(uint256 indexed id, address indexed participant, uint256 raidFee);
     event Remove(uint256 indexed id, address indexed participant);
     event ClaimPrize(uint256 indexed id, address indexed winner);
-
+    
     struct RaidInfo {
-        prizeInfo[] prizeInfo;
+        PrizeInfo[] prizeInfo;
         address[] participants;
         uint256 raidFee;
         uint64 openingTime;
@@ -37,18 +41,27 @@ contract Raid is AccessControl, IRaidPrize {
         bool IsPrizeClaimed;
     }
 
+    struct UserRaidInfo {
+        uint256[] userRaidIds;
+        // id => RaidStatus
+        mapping(uint256 => RaidStatus) raidStatus;
+    }
+
     // Id => index
-    mapping(uint256 => uint256) public raidIdIndex;
+    mapping(uint256 => uint256) private raidIdIndex;
     // Id => RaidInfo
-    mapping(uint256 => RaidInfo) public raidInfoInfoById;
-    // Id => user => RaidId
-    mapping(uint256 => mapping(address => RaidStatus)) public raidStatusByUser;
-    
+    mapping(uint256 => RaidInfo) private raidInfoInfoById;
+    // user => UserRaidInfo
+    mapping(address => UserRaidInfo) private userRaidInfo;
+    // user => id => index
+    mapping(address => mapping(uint256 => uint256)) private userRaidIdIndex;
+
     uint256[] private raidIdList;
-    uint256 private id;
+    uint256 public id;
     address public raidVault;
     address public teamVault;
     IERC20 public battingToken; 
+
     constructor(
         IERC20 _battingToken,
         address _manager,
@@ -63,18 +76,8 @@ contract Raid is AccessControl, IRaidPrize {
         _grantRole(MANAGER, _manager);
     }
 
-    function announce(
-        uint256 _id
-    ) 
-        external
-        onlyRole(MANAGER) 
-    {
-        RaidInfo storage raid = raidInfoInfoById[_id];
-        raid.isRaidCompleted = true; 
-    }
-
     function createRaid(
-        prizeInfo[] memory _prizeInfoList,
+        PrizeInfo[] memory _prizeInfoList,
         uint256 _raidFee,
         uint64 _openingTime,
         uint64 _closingTime,
@@ -83,7 +86,7 @@ contract Raid is AccessControl, IRaidPrize {
         external 
         onlyRole(MANAGER) 
     {
-        if (_openingTime < block.timestamp || _closingTime < _openingTime) revert InvalidTimeRange();
+        if (_closingTime < _openingTime) revert InvalidTimeRange();
         uint256 size = _prizeInfoList.length;
     
         uint256 raidId = id;
@@ -96,11 +99,9 @@ contract Raid is AccessControl, IRaidPrize {
         newRaid.closingTime = _closingTime;
         newRaid.maxParticipants = _maxParticipants;
         newRaid.isRaidCompleted = false;
-        newRaid.participants = new address[](_maxParticipants);
-    
-        // Copy prizeInfo from calldata to storage
+       
         for (uint256 i = 0; i < size; i++) {
-            prizeTransfer(msg.sender, _prizeInfoList[i]);
+            _prizeTransfer(raidVault, _prizeInfoList[i]);
             newRaid.prizeInfo.push(_prizeInfoList[i]); // Push each element into the storage array
         }
     
@@ -110,51 +111,115 @@ contract Raid is AccessControl, IRaidPrize {
     function joinRaid(uint256 _id) external {
         RaidInfo storage raid = raidInfoInfoById[_id];
 
-        if(raid.maxParticipants == raid.participants.length + 1) revert RaidFull();
-        if(raid.isRaidCompleted || raid.closingTime < block.timestamp) revert RaidClosed();
-        if(raid.openingTime < block.timestamp) revert RaidNotReady();
+        if (raid.participants.length >= raid.maxParticipants) revert RaidFull();
+        if (raid.openingTime > block.timestamp) revert RaidNotReady();
+        if (raid.isRaidCompleted || raid.closingTime < block.timestamp) revert RaidClosed();
+
 
         uint256 raidFee = raid.raidFee;
         battingToken.transferFrom(msg.sender, teamVault, raidFee); 
 
         raid.participants.push(msg.sender);
-        raidStatusByUser[_id][msg.sender] = RaidStatus({
-            IsUserJoined : true,
-            IsPrizeClaimed : false
-        });
+        userRaidIdIndex[msg.sender][_id] = userRaidInfo[msg.sender].userRaidIds.length;
+        userRaidInfo[msg.sender].userRaidIds.push(_id);
+        userRaidInfo[msg.sender].raidStatus[_id].IsUserJoined = true;
+
         emit Join(_id, msg.sender, raidFee);
     }
 
     function removeRaid(uint256 _id) external onlyRole(MANAGER) {
         RaidInfo storage raid = raidInfoInfoById[_id];
-        if(raid.isRaidCompleted) revert RaidClosed();
-     
+
         _removeIndexOfId(_id);
 
         delete raidIdIndex[_id];
         delete raidInfoInfoById[_id];
 
         uint256 size = raid.prizeInfo.length;
-        for(uint256 i; i < size; i++) {
-            prizeTransfer(msg.sender, raid.prizeInfo[i]);
+        for (uint256 i; i < size; i++) {
+            _prizeTransfer(msg.sender, raid.prizeInfo[i]);
         }
         emit Remove(_id, msg.sender);
     }
 
+    function complete(
+        uint256 _id
+    ) 
+        external
+        onlyRole(MANAGER) 
+    {
+        RaidInfo storage raid = raidInfoInfoById[_id];
+        if (raid.isRaidCompleted) revert RaidClosed();
+        raid.isRaidCompleted = true; 
+        _removeIndexOfId(_id);
+    }
+
     function claimPrize(uint256 _id) external {
         RaidInfo storage raid = raidInfoInfoById[_id];
-        RaidStatus storage raidStatus = raidStatusByUser[_id][msg.sender];
-        if(!raid.isRaidCompleted) revert RaidNotCompleted();
-        if(!raidStatus.IsUserJoined) revert UserNotParticipated();
-        if(raidStatus.IsPrizeClaimed) revert PrizeAlreadyClaimed();
-
+        UserRaidInfo storage userRaid = userRaidInfo[msg.sender];
+        RaidStatus storage userRaidStatus = userRaid.raidStatus[_id];
+        if (!raid.isRaidCompleted) revert RaidNotCompleted();
+        if (!userRaidStatus.IsUserJoined) revert UserNotParticipated();
+        if (userRaidStatus.IsPrizeClaimed) revert PrizeAlreadyClaimed();
+       
         uint256 size = raid.prizeInfo.length;
-        for(uint256 i; i < size; i++) {
-            prizeTransfer(msg.sender, raid.prizeInfo[i]);
+        for (uint256 i; i < size; i++) {
+            IPvpAndRaidVault(raidVault).moveToken(msg.sender, raid.prizeInfo[i], raid.maxParticipants);
         }
-        raidStatus.IsPrizeClaimed = true;
-        _removeIndexOfId(_id);
+        userRaidStatus.IsPrizeClaimed = true;
+        _removeIndexOfUserRaidId(msg.sender, _id);
+        
         emit ClaimPrize(_id, msg.sender);
+    }
+
+    function withdrawLeftoverPrize(uint256 _id) external onlyRole(MANAGER) {
+        RaidInfo storage raid = raidInfoInfoById[_id];
+        uint256 totalParticipants = raid.participants.length;
+        if (!raid.isRaidCompleted) revert RaidNotCompleted();
+        if (raid.maxParticipants == totalParticipants) revert NoRemainingPrize();
+        uint256 size = raid.prizeInfo.length;
+        for (uint256 i; i < size; i++) {
+            IPvpAndRaidVault(raidVault).moveLeftOverToken(msg.sender, raid.prizeInfo[i], raid.maxParticipants, totalParticipants);
+        }
+    }
+
+    function getRaidInfoInfoById(
+        uint256 _id
+    ) 
+        external 
+        view 
+        returns ( 
+            PrizeInfo[] memory prizeInfoList, 
+            address[] memory participantList, 
+            uint256 raidFee,
+            uint64 openingTime,
+            uint64 closingTime,
+            uint64 maxParticipants,
+            bool isRaidCompleted
+        ) 
+    {
+        RaidInfo storage raid = raidInfoInfoById[_id];
+        uint256 size = raid.prizeInfo.length;
+        prizeInfoList = new PrizeInfo[](size);
+
+        for (uint256 i; i < size; i++) {
+            prizeInfoList[i] = raid.prizeInfo[i];
+        }
+
+        size = raid.participants.length;
+        participantList = new address[](size);
+        for (uint256 i; i < size; i++) {
+            participantList[i] = raid.participants[i];
+        }
+
+        return (prizeInfoList, 
+                participantList, 
+                raid.raidFee,
+                raid.openingTime,
+                raid.closingTime,
+                raid.maxParticipants,
+                raid.isRaidCompleted);
+     
     }
 
     function raidIdsList (
@@ -172,8 +237,30 @@ contract Raid is AccessControl, IRaidPrize {
 
         _size = length > _size + _offset ? _size : length - _offset;
         _list = new uint256[](_size);  
-        for(uint256 i; i < _size; i++) {
+        for (uint256 i; i < _size; i++) {
             _list[i] = raidIds[_offset++];
+        }        
+       
+    }
+
+    function userRaidIdList (
+        address _user,
+        uint256 _offset,
+        uint256 _size
+    ) 
+        external 
+        view 
+        returns (
+            uint256[] memory _list
+        ) 
+    {   
+        uint256[] storage userRaidIds = userRaidInfo[_user].userRaidIds;
+        uint256 length = userRaidIds.length;
+
+        _size = length > _size + _offset ? _size : length - _offset;
+        _list = new uint256[](_size);  
+        for (uint256 i; i < _size; i++) {
+            _list[i] = userRaidIds[_offset++];
         }        
        
     }
@@ -189,6 +276,40 @@ contract Raid is AccessControl, IRaidPrize {
             raidIds[lastId] = index;
         }
         raidIds.pop();
+    }
+
+    function _removeIndexOfUserRaidId(
+        address _user, 
+        uint256 _id
+    ) 
+        private 
+    {
+        uint256[] storage userRaidIds = userRaidInfo[_user].userRaidIds;
+
+        uint256 index = userRaidIdIndex[_user][_id];
+        uint256 lastIndex = userRaidIds.length - 1;
+        if (index != lastIndex) {
+            uint256 lastId = userRaidIds[lastIndex];
+            userRaidIds[index] = lastId;
+            userRaidIds[lastId] = index;
+        }
+        userRaidIds.pop();
+    }
+
+    function _prizeTransfer(
+        address _to,
+        PrizeInfo memory _prizeInfo
+    ) 
+        private 
+    {
+        if (_prizeInfo.prizeType == PrizeType.ERC20) {
+            //slither-disable-next-line arbitrary-send per
+            IERC20(_prizeInfo.prize).transferFrom(msg.sender, _to, _prizeInfo.quantity);
+        } else if (_prizeInfo.prizeType == PrizeType.ERC1155) {
+            IERC1155(_prizeInfo.prize).safeTransferFrom(msg.sender, _to, _prizeInfo.id, _prizeInfo.quantity, "");
+        } else {
+            revert InvalidType();
+        }
     }
 
 }

@@ -12,14 +12,18 @@ async function main() {
     "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0"
   );
 
-  //   await gameToken.grantRole(TOKEN_MINTER, deployer.address);
-  //   await gameToken.mint(deployer.address, ethers.parseEther("1000"));
-  //   await gameToken.approve(items.target, ethers.MaxUint256);
-  //   await items.requireMint(3);
+  await gameToken.grantRole(TOKEN_MINTER, deployer.address);
+  await gameToken.mint(deployer.address, ethers.parseEther("1000"));
+  await gameToken.approve(items.target, ethers.MaxUint256);
+  await items.requestMint(10);
 
-  console.log(await items.getItemInfoList([1, 2, 3]));
+  // console.log(await items.getItemInfoList([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]));
 }
 main().catch((error) => {
   console.error(error);
   process.exitCode = 1;
 });
+
+/*
+Change NFT erc1155
+*/

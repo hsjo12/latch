@@ -72,26 +72,29 @@ describe("Items Test", () => {
     expect(GAS_BACK).to.eq(await items.gasback());
   });
 
+  it("Check if only TOKEN_MINTER role can mint items", async () => {
+    const swordStats = [10, 10, 0, 100];
+    const shieldStats = [0, 100, 0, 100];
+    const bootsStats = [0, 0, 100, 100];
+
+    await items.setItemStats([1, 2, 3], [swordStats, shieldStats, bootsStats]);
+    expect(await items.getItemInfoList([1, 2, 3])).to.deep.eq([
+      swordStats,
+      shieldStats,
+      bootsStats,
+    ]);
+  });
+
   it("Check if User can mint items", async () => {
     const price = await items.price();
     const quantity = 2n;
     const totalPrice = price * quantity;
+    const nftId = 1;
 
     const tokenBalanceOfTeamVault = await gameToken.balanceOf(teamVault.target);
     const tokenBalanceOfUser1 = await gameToken.balanceOf(user1.address);
-    const itemBalanceOfUser1 = await items.balanceOf(user1.address);
-
-    await expect(items.connect(user1).requireMint(quantity))
-      .to.emit(items, "MintRequested")
-      .withArgs(user1.address, quantity);
-
-    const receiver = user1.address;
-    const randomItemTypes = generateRandomItemTypesArray(Number(quantity));
-    const stats = generateRandomStatsArray(randomItemTypes);
-
-    await expect(items.mintItems(receiver, randomItemTypes, stats))
-      .to.emit(items, "ItemMinted")
-      .withArgs(user1.address, quantity);
+    const itemBalanceOfUser1 = await items.balanceOf(user1.address, nftId);
+    await items.connect(user1).mintItems(nftId, quantity);
 
     expect(await gameToken.balanceOf(user1.address)).to.eq(
       tokenBalanceOfUser1 - totalPrice
@@ -99,20 +102,9 @@ describe("Items Test", () => {
     expect(await gameToken.balanceOf(teamVault.target)).to.eq(
       tokenBalanceOfTeamVault + totalPrice
     );
-    expect(await items.balanceOf(user1.address)).to.eq(
+    expect(await items.balanceOf(user1.address, nftId)).to.eq(
       itemBalanceOfUser1 + quantity
     );
-  });
-
-  it("Check if only TOKEN_MINTER role can mint items", async () => {
-    const quantity = 3n;
-    const receiver = user1.address;
-    const randomItemTypes = generateRandomItemTypesArray(Number(quantity));
-    const stats = generateRandomStatsArray(randomItemTypes);
-
-    await expect(
-      items.connect(user1).mintItems(receiver, randomItemTypes, stats)
-    ).to.reverted;
   });
 
   it("Check if only MANAGER or DEFAULT_ADMIN_ROLE role can execute setPrice, setOwner, setTeamVault, setGameToken and setTokenURIById", async () => {
@@ -140,40 +132,12 @@ describe("Items Test", () => {
     expect(newGameToken).to.eq(await items.gameToken());
     await expect(items.connect(user1).setGameToken(newGameToken)).to.reverted;
 
-    //setTokenURIById
-    const newTokenURI = "newTokenURI";
-    await items.setTokenURIById(1, newTokenURI);
-    expect(newTokenURI).to.eq(await items.tokenURIByItemType(1));
-    await expect(items.connect(user1).setTokenURIById(1, newTokenURI)).to
-      .reverted;
-  });
-
-  it("Check if setTokenURIById and tokenURI work well", async () => {
-    const price = await items.price();
-    const quantity = 3n;
-
-    const newTokenURI = "newTokenURI";
-    await items.setTokenURIById(0, `${newTokenURI}0`);
-    await items.setTokenURIById(1, `${newTokenURI}1`);
-    await items.setTokenURIById(2, `${newTokenURI}2`);
-
-    const receiver = user1.address;
-    const randomItemTypes = generateRandomItemTypesArray(Number(quantity));
-    const stats = generateRandomStatsArray(randomItemTypes);
-
-    await items.mintItems(receiver, randomItemTypes, stats);
-
-    const info = await items.getItemInfoList([0, 1, 2]);
-    await expect(info[0]).to.deep.eq([randomItemTypes[0], stats[0]]);
-    await expect(info[1]).to.deep.eq([randomItemTypes[1], stats[1]]);
-    await expect(info[2]).to.deep.eq([randomItemTypes[2], stats[2]]);
-
-    const tokenId0_ItemType = randomItemTypes[0];
-    const tokenId1_ItemType = randomItemTypes[1];
-    const tokenId2_ItemType = randomItemTypes[2];
-
-    expect(await items.tokenURI(0)).to.eq(`newTokenURI${tokenId0_ItemType}`);
-    expect(await items.tokenURI(1)).to.eq(`newTokenURI${tokenId1_ItemType}`);
-    expect(await items.tokenURI(2)).to.eq(`newTokenURI${tokenId2_ItemType}`);
+    //setBaseURI
+    const id = 1;
+    const newTokenURI = "newTokenURI/";
+    await items.setBaseURI(newTokenURI);
+    expect(await items.baseURI()).to.eq(newTokenURI);
+    expect(await items.uri(id)).to.eq(`${newTokenURI}${id}.json`);
+    await expect(items.connect(user1).setBaseURI(newTokenURI)).to.reverted;
   });
 });

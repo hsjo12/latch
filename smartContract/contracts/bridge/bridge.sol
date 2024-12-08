@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.27;
-import { IERC721A } from "erc721a/contracts/IERC721A.sol";
+
+import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import { IERC721Receiver } from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 contract Bridge is IERC721Receiver {
 
@@ -43,7 +44,7 @@ contract Bridge is IERC721Receiver {
     }
 
     function _importItem(address _item, uint256 _tokenId) private {
-        IERC721A(_item).safeTransferFrom(msg.sender, address(this), _tokenId, "");
+        IERC721(_item).safeTransferFrom(msg.sender, address(this), _tokenId, "");
        
         uint256[] storage items = importedItemIds[msg.sender][_item];
 
@@ -119,7 +120,7 @@ contract Bridge is IERC721Receiver {
         }
 
         // Transfer the token back to the user
-        IERC721A(_item).safeTransferFrom(address(this), msg.sender, _tokenId, "");
+        IERC721(_item).safeTransferFrom(address(this), msg.sender, _tokenId, "");
 
         emit Export(msg.sender, _item, _tokenId);
     }

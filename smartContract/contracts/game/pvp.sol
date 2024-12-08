@@ -13,38 +13,33 @@ contract Pvp is AccessControl {
     error CannotBeCreator();
     error ParticipantExists();
     error OnlyCreator();
-    error OnlyWinner();
-    error AlreadyClaimed();
+    error AlreadyInvolvedInPVP();
+    error AlreadyAnnounced();
+    error InvalidWinner();
 
-    event Result(uint256 indexed id, address indexed creator);
-    event Create(uint256 indexed id, address indexed creator, uint256 amount);
-    event Join(uint256 indexed id, address indexed participant, uint256 amount);
-    event Remove(uint256 indexed id, address indexed participant, uint256 amount);
-    event ClaimPrize(uint256 indexed id, address indexed winner, uint256 amount);
-
+    event Announce(uint256 indexed id, address indexed winner, uint256 totalPrize);
+    event Create(uint256 indexed id, address indexed creator, uint256 battingAmount);
+    event Join(uint256 indexed id, address indexed participant, uint256 battingAmount);
+    event Remove(uint256 indexed id, address indexed participant, uint256 battingAmount);
+    
     struct PvpInfo {
         address creator; 
         address participant;
         address winner;
         uint256 battingFee;
         uint256 totalPrize;
-        bool isPrizeClaimed;
+        bool isWinnerAnnounced;
     }
 
-    struct IdIndices {
-        uint256 idIndexInPvpByUserList;
-        uint256 idIndexInPvpList;
-    }
-
-    // Id => index
-    mapping(uint256 => IdIndices) public idIndex;
-    // User => Ids
-    mapping(address => uint256[]) private pvpByUser;
+    // User => Id
+    mapping(address => uint256) public pvpByUser;
     // Id => PvpInfo
     mapping(uint256 => PvpInfo) public pvpInfoById;
+    // Id => index
+    mapping(uint256 => uint256) public pvpIdIndex;
     uint256[] private pvpIdList;
 
-    uint256 public id;
+    uint256 public id = 1;
     uint16 public teamTax;
     address public pvpVault;
     address public teamVault;
@@ -64,31 +59,12 @@ contract Pvp is AccessControl {
         _grantRole(MANAGER, _manager);
     }
 
-    function announce(
-        address _winner, 
-        uint256 _id
-    ) 
-        external
-        onlyRole(MANAGER) 
-    {
-        PvpInfo storage pvp = pvpInfoById[_id];
-        uint256 toTeam = (pvp.totalPrize * teamTax) / BPS;
-        uint256 toWinner = pvp.totalPrize - toTeam;
-        IPvpAndRaidVault(pvpVault).MoveToken(msg.sender, toTeam);
-        pvp.totalPrize = toWinner;
-        pvp.winner = _winner;
-
-        emit Result(_id, _winner);
-    }
-
     function createPvp(uint256 _amount) external {
+        if (pvpByUser[msg.sender] != 0) revert AlreadyInvolvedInPVP();
         battingToken.transferFrom(msg.sender, pvpVault, _amount);
         uint256 pvpId = id;
-        idIndex[pvpId] = IdIndices({
-            idIndexInPvpByUserList:pvpByUser[msg.sender].length,
-            idIndexInPvpList:pvpIdList.length
-        });
-        pvpByUser[msg.sender].push(pvpId);
+        pvpIdIndex[pvpId] = pvpIdList.length;
+        pvpByUser[msg.sender] = pvpId;
         pvpIdList.push(pvpId);
         pvpInfoById[pvpId] = PvpInfo({
             creator: msg.sender, 
@@ -96,7 +72,7 @@ contract Pvp is AccessControl {
             winner: address(0), 
             battingFee:_amount,
             totalPrize:_amount,
-            isPrizeClaimed:false
+            isWinnerAnnounced:false
         });
 
         emit Create(id++, msg.sender, _amount);
@@ -104,10 +80,11 @@ contract Pvp is AccessControl {
     
     function joinPvp(uint256 _id) external {
         PvpInfo storage pvp = pvpInfoById[_id];
-        if(pvp.creator == address(0)) revert PvpNotFound();
-        if(pvp.creator == msg.sender) revert CannotBeCreator();
-        if(pvp.participant != address(0)) revert ParticipantExists();
+        if (pvp.creator == address(0)) revert PvpNotFound();
+        if (pvp.creator == msg.sender) revert CannotBeCreator();
+        if (pvp.participant != address(0)) revert ParticipantExists();
 
+        pvpByUser[msg.sender] = _id;
         uint256 amount = pvp.battingFee;
         battingToken.transferFrom(msg.sender, pvpVault, amount); 
   
@@ -118,57 +95,63 @@ contract Pvp is AccessControl {
 
     function removePvp(uint256 _id) external {
         PvpInfo storage pvp = pvpInfoById[_id];
-        if(pvp.creator != msg.sender) revert OnlyCreator();
-        if(pvp.participant != address(0)) revert ParticipantExists();
-
-        _removeIndexOfId(_id);
+        if (pvp.creator != msg.sender) revert OnlyCreator();
+        if (pvp.participant != address(0)) revert ParticipantExists();
 
         uint256 battingFee = pvp.battingFee; 
-
-        delete idIndex[_id];
+        _removeIndexOfId(_id);
+        delete pvpByUser[msg.sender];
+        delete pvpIdIndex[_id];
         delete pvpInfoById[_id];
 
-        battingToken.transfer(msg.sender, battingFee); 
+        IPvpAndRaidVault(pvpVault).moveToken(msg.sender, battingFee);
         emit Remove(_id, msg.sender, battingFee);
     }
 
-    function claimPrize(uint256 _id) external {
+    function announce(
+        address _winner, 
+        uint256 _id
+    ) 
+        external
+        onlyRole(MANAGER) 
+    {
         PvpInfo storage pvp = pvpInfoById[_id];
-        if(pvp.winner != msg.sender) revert OnlyWinner();
-        if(pvp.isPrizeClaimed) revert AlreadyClaimed();
-        IPvpAndRaidVault(pvpVault).MoveToken(msg.sender, pvp.totalPrize);
+        if (pvp.isWinnerAnnounced) revert AlreadyAnnounced();
+        if (_winner != pvp.creator && _winner != pvp.participant) revert InvalidWinner();
+        uint256 toTeam = (pvp.totalPrize * teamTax) / BPS;
+        uint256 toWinner = pvp.totalPrize - toTeam;
+        pvp.totalPrize = toWinner;
+        pvp.winner = _winner;
+        pvp.isWinnerAnnounced = true;
+
+        IPvpAndRaidVault(pvpVault).moveToken(teamVault, toTeam);
+        IPvpAndRaidVault(pvpVault).moveToken(_winner, toWinner);
+
         _removeIndexOfId(_id);
-        delete idIndex[_id];
-        emit ClaimPrize(_id, msg.sender, pvp.totalPrize);
+        delete pvpByUser[pvp.creator];
+        delete pvpByUser[pvp.participant];
+        delete pvpIdIndex[_id];
+        emit Announce(_id, _winner, toWinner);
     }
 
     function setTeamTax(uint16 _teamTax) external onlyRole(MANAGER) {
         teamTax = _teamTax;
     }
 
-    function battleIdsListByUser (
-        address _user,
-        uint256 _offset,
-        uint256 _size
-    ) 
-        external 
-        view 
-        returns (
-            uint256[] memory list
-        ) 
-    {   
-        uint256[] storage pvpIdsInUser = pvpByUser[_user];
-        uint256 length = pvpIdsInUser.length;
-
-        _size = length > _size + _offset ? _size : length - _offset;
-        list = new uint256[](_size);  
-        for(uint256 i; i < _size; i++) {
-            list[i] = pvpIdsInUser[_offset++];
-        }        
-       
+    function setPvpVault(address _pvpVault) external onlyRole(MANAGER) {
+        pvpVault = _pvpVault;
     }
 
-    function battleIdsList (
+    function setTeamVault(address _teamVault) external onlyRole(MANAGER) {
+        teamVault = _teamVault;
+    }
+
+    function setBattingToken(IERC20 _battingToken) external onlyRole(MANAGER) {
+        battingToken = _battingToken;
+    }
+
+ 
+    function pvpIdsList (
         uint256 _offset,
         uint256 _size
     ) 
@@ -183,35 +166,24 @@ contract Pvp is AccessControl {
 
         _size = length > _size + _offset ? _size : length - _offset;
         list = new uint256[](_size);  
-        for(uint256 i; i < _size; i++) {
+        for (uint256 i; i < _size; i++) {
             list[i] = pvpIds[_offset++];
         }        
        
     }
 
     function _removeIndexOfId(uint256 _id) private {
-        uint256[] storage pvpIdsInUserList = pvpByUser[msg.sender];
         uint256[] storage pvpIds = pvpIdList;
+        uint256 index = pvpIdIndex[_id];
+        uint256 lastIndex = pvpIds.length - 1;
 
-        uint256 index = idIndex[_id].idIndexInPvpByUserList;
-        uint256 lastIndex = pvpIdsInUserList.length - 1;
-        if (index != lastIndex) {
-            uint256 lastId = pvpIdsInUserList[lastIndex];
-            pvpIdsInUserList[index] = lastId;
-            pvpIdsInUserList[lastId] = index;
-        }
-
-        index = idIndex[_id].idIndexInPvpList;
-        lastIndex = pvpIds.length - 1;
         if (index != lastIndex) {
             uint256 lastId = pvpIds[lastIndex];
             pvpIds[index] = lastId;
             pvpIds[lastId] = index;
         }
 
-        pvpIdsInUserList.pop();
         pvpIds.pop();
-
     }
 
 

@@ -9,15 +9,7 @@ const {
 } = require("@nomicfoundation/hardhat-toolbox/network-helpers");
 const { ethers } = require("hardhat");
 const { expect } = require("chai");
-const {
-  generateRandomItemTypesArray,
-  generateRandomStatsArray,
-} = require("../utils/utils");
 
-const sortList = (list) => {
-  list = Array.from(list);
-  return list.sort((a, b) => Number(a) - Number(b));
-};
 const GAS_BACK = "0x5d84B43d662CB1787716D4804A6164Efc135FfB6";
 
 const DISTRIBUTOR =
@@ -42,7 +34,7 @@ const setUp = async () => {
   const Pvp = await ethers.getContractFactory("Pvp");
   const pvp = await Pvp.deploy(
     gameToken.target,
-    deployer,
+    deployer.address,
     pvpVault.target,
     teamVault.target
   );
@@ -79,7 +71,7 @@ describe("Pvp Test", () => {
       await loadFixture(setUp));
   });
 
-  it.only("Check if createPvp works fine", async () => {
+  it("Check if createPvp works fine", async () => {
     const battingAmount = ethers.parseEther("10");
     const first_pvpId = await pvp.id();
     const battingTokenBalanceOfUser1 = await gameToken.balanceOf(user1.address);
@@ -93,16 +85,9 @@ describe("Pvp Test", () => {
 
     const second_pvpId = await pvp.id();
     await pvp.connect(user2).createPvp(battingAmount);
-    expect(await pvp.battleIdsListByUser(user1.address, 0, 10)).to.deep.eq([
-      first_pvpId,
-    ]);
-    expect(await pvp.battleIdsListByUser(user2.address, 0, 10)).to.deep.eq([
-      second_pvpId,
-    ]);
-    expect(await pvp.battleIdsList(0, 10)).to.deep.eq([
-      first_pvpId,
-      second_pvpId,
-    ]);
+    expect(await pvp.pvpByUser(user1.address)).to.eq(first_pvpId);
+    expect(await pvp.pvpByUser(user2.address)).to.eq(second_pvpId);
+    expect(await pvp.pvpIdsList(0, 10)).to.deep.eq([first_pvpId, second_pvpId]);
 
     expect(await pvp.pvpInfoById(first_pvpId)).to.deep.eq([
       user1.address,
@@ -127,8 +112,191 @@ describe("Pvp Test", () => {
     const first_pvpId = await pvp.id();
     await pvp.connect(user1).createPvp(battingAmount);
 
-    await expect(pvp.connect(user2.address).joinPvp(first_pvpId))
+    const battingTokenBalanceOfUser2 = await gameToken.balanceOf(user2.address);
+    const battingTokenBalanceOfPvpVault = await gameToken.balanceOf(
+      pvpVault.target
+    );
+
+    await expect(pvp.connect(user2).joinPvp(first_pvpId))
       .to.emit(pvp, "Join")
       .withArgs(first_pvpId, user2.address, battingAmount);
+
+    expect(await pvp.pvpByUser(user2.address)).to.eq(first_pvpId);
+    expect(await gameToken.balanceOf(user1.address)).to.eq(
+      battingTokenBalanceOfUser2 - battingAmount
+    );
+
+    expect(await gameToken.balanceOf(pvpVault.target)).to.eq(
+      battingTokenBalanceOfPvpVault + battingAmount
+    );
+
+    expect(await pvp.pvpInfoById(first_pvpId)).to.deep.eq([
+      user1.address,
+      user2.address,
+      ethers.ZeroAddress,
+      battingAmount,
+      battingAmount * 2n,
+      false,
+    ]);
+  });
+
+  it("Check if removePvp works fine", async () => {
+    const battingAmount = ethers.parseEther("10");
+    const none_pvpId = 0n;
+    const first_pvpId = await pvp.id();
+    await pvp.connect(user1).createPvp(battingAmount);
+
+    const battingTokenBalanceOfUser1 = await gameToken.balanceOf(user1.address);
+    const battingTokenBalanceOfPvpVault = await gameToken.balanceOf(
+      pvpVault.target
+    );
+    await expect(pvp.connect(user1).removePvp(first_pvpId))
+      .to.emit(pvp, "Remove")
+      .withArgs(first_pvpId, user1.address, battingAmount);
+
+    expect(await gameToken.balanceOf(user1.address)).to.eq(
+      battingTokenBalanceOfUser1 + battingAmount
+    );
+
+    expect(await gameToken.balanceOf(pvpVault.target)).to.eq(
+      battingTokenBalanceOfPvpVault - battingAmount
+    );
+    expect(await pvp.pvpByUser(user1.address)).to.eq(none_pvpId);
+    expect(await pvp.pvpByUser(user2.address)).to.eq(none_pvpId);
+    expect(await pvp.pvpIdsList(0, 10)).to.deep.eq([]);
+
+    expect(await pvp.pvpInfoById(first_pvpId)).to.deep.eq([
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      ethers.ZeroAddress,
+      0,
+      0,
+      false,
+    ]);
+  });
+
+  it("Check if announce works fine", async () => {
+    const battingAmount = ethers.parseEther("10");
+    const first_pvpId = await pvp.id();
+    const teamTax = await pvp.teamTax();
+    await pvp.connect(user1).createPvp(battingAmount);
+    await pvp.connect(user2).joinPvp(first_pvpId);
+
+    let totalPrize = (await pvp.pvpInfoById(first_pvpId)).totalPrize;
+    const toTeam = (totalPrize * teamTax) / 10_000n;
+    const battingTokenBalanceOfUser1 = await gameToken.balanceOf(user1.address);
+    const battingTokenBalanceOfTeam = await gameToken.balanceOf(
+      teamVault.target
+    );
+    totalPrize = totalPrize - toTeam;
+    await expect(pvp.announce(user1.address, first_pvpId))
+      .to.emit(pvp, "Announce")
+      .withArgs(first_pvpId, user1.address, totalPrize);
+
+    expect(await gameToken.balanceOf(user1.address)).to.eq(
+      battingTokenBalanceOfUser1 + totalPrize
+    );
+    expect(await gameToken.balanceOf(teamVault.target)).to.eq(
+      battingTokenBalanceOfTeam + toTeam
+    );
+    expect(await pvp.pvpInfoById(first_pvpId)).to.deep.eq([
+      user1.address,
+      user2.address,
+      user1.address,
+      battingAmount,
+      totalPrize,
+      true,
+    ]);
+  });
+
+  it("Check if setTeamTax, setPvpVault, setTeamVault, and setBattingToken work fine", async () => {
+    const tax = 0;
+    const zeroAddress = ethers.ZeroAddress;
+
+    await pvp.setTeamTax(tax);
+    await pvp.setPvpVault(zeroAddress);
+    await pvp.setTeamVault(zeroAddress);
+    await pvp.setBattingToken(zeroAddress);
+
+    expect(await pvp.teamTax()).to.eq(tax);
+    expect(await pvp.pvpVault()).to.eq(zeroAddress);
+    expect(await pvp.teamVault()).to.eq(zeroAddress);
+    expect(await pvp.battingToken()).to.eq(zeroAddress);
+  });
+
+  it("Check if revert statements work in the createPvp function", async () => {
+    const battingAmount = ethers.parseEther("10");
+    const pvpId = await pvp.id();
+    await pvp.connect(user1).createPvp(battingAmount);
+    await pvp.connect(user2).joinPvp(pvpId);
+
+    await expect(
+      pvp.connect(user1).createPvp(battingAmount)
+    ).to.revertedWithCustomError(pvp, "AlreadyInvolvedInPVP");
+    await expect(
+      pvp.connect(user2).createPvp(battingAmount)
+    ).to.revertedWithCustomError(pvp, "AlreadyInvolvedInPVP");
+  });
+
+  it("Check if revert statements work in the joinPvp function", async () => {
+    const battingAmount = ethers.parseEther("10");
+    const pvpId = await pvp.id();
+    await pvp.connect(user1).createPvp(battingAmount);
+
+    const fakePvpId = pvpId + 10n;
+    await expect(pvp.joinPvp(fakePvpId)).to.revertedWithCustomError(
+      pvp,
+      "PvpNotFound"
+    );
+    await expect(pvp.connect(user1).joinPvp(pvpId)).to.revertedWithCustomError(
+      pvp,
+      "CannotBeCreator"
+    );
+
+    await pvp.connect(user2).joinPvp(pvpId);
+    await expect(pvp.connect(user3).joinPvp(pvpId)).to.revertedWithCustomError(
+      pvp,
+      "ParticipantExists"
+    );
+  });
+
+  it("Check if revert statements work in the removePvp function", async () => {
+    const battingAmount = ethers.parseEther("10");
+    const pvpId = await pvp.id();
+    await pvp.connect(user1).createPvp(battingAmount);
+
+    const fakePvpId = pvpId + 10n;
+    await expect(
+      pvp.connect(user2).removePvp(fakePvpId)
+    ).to.revertedWithCustomError(pvp, "OnlyCreator");
+    await expect(
+      pvp.connect(user2).removePvp(pvpId)
+    ).to.revertedWithCustomError(pvp, "OnlyCreator");
+
+    await pvp.connect(user2).joinPvp(pvpId);
+    await expect(
+      pvp.connect(user1).removePvp(pvpId)
+    ).to.revertedWithCustomError(pvp, "ParticipantExists");
+  });
+
+  it("Check if revert statements work in the announce function", async () => {
+    const battingAmount = ethers.parseEther("10");
+    const pvpId = await pvp.id();
+    await pvp.connect(user1).createPvp(battingAmount);
+    await pvp.connect(user2).joinPvp(pvpId);
+
+    await expect(pvp.connect(user1).announce(user1.address, pvpId)).to.reverted;
+
+    await expect(pvp.announce(user3.address, pvpId)).to.revertedWithCustomError(
+      pvp,
+      "InvalidWinner"
+    );
+
+    await pvp.announce(user1.address, pvpId);
+
+    await expect(pvp.announce(user1.address, pvpId)).to.revertedWithCustomError(
+      pvp,
+      "AlreadyAnnounced"
+    );
   });
 });
