@@ -26,9 +26,11 @@ export default class CommonScene extends Phaser.Scene {
     this.load.image("Water_Tile", "/assets/Water_Tile.png");
     this.load.image("Well", "/assets/Well.png");
     this.load.image("With_Hut", "/assets/With_Hut.png");
+    this.load.image("Cave_Floor", "/assets/Cave_Floor.png");
+    this.load.image("Water_Troughs", "/assets/Water_Troughs.png");
 
-    this.load.tilemapTiledJSON("common", "assets/common.json");
-    this.load.spritesheet("player", "assets/Spearman.png", {
+    this.load.tilemapTiledJSON("common", "/assets/common.json");
+    this.load.spritesheet("player", "/assets/Spearman.png", {
       frameWidth: 48,
       frameHeight: 48,
     });
@@ -41,6 +43,7 @@ export default class CommonScene extends Phaser.Scene {
     const waterMiddle = map.addTilesetImage("Water_Middle", "Water_Middle");
     const Cobble_Road_1 = map.addTilesetImage("Cobble_Road_1", "Cobble_Road_1");
     const Grass_Tiles_1 = map.addTilesetImage("Grass_Tiles_1", "Grass_Tiles_1");
+    const Cave_Floor = map.addTilesetImage("Cave_Floor", "Cave_Floor");
     const beachDecorTiles = map.addTilesetImage(
         "Beach_Decor_Tiles",
         "Beach_Decor_Tiles",
@@ -54,6 +57,7 @@ export default class CommonScene extends Phaser.Scene {
           beachDecorTiles,
           Cobble_Road_1,
           Grass_Tiles_1,
+          Cave_Floor
         ],
         0,
         0,
@@ -74,6 +78,7 @@ export default class CommonScene extends Phaser.Scene {
     const With_Hut = map.addTilesetImage("With_Hut", "With_Hut");
     const Birch_Tree = map.addTilesetImage("Birch_Tree", "Birch_Tree");
     const Apple_Tree = map.addTilesetImage("Apple_Tree", "Apple_Tree");
+    const Water_Troughs = map.addTilesetImage("Water_Troughs", "Water_Troughs");
     const objectLayer = map.createLayer(
         "objects",
         [
@@ -86,6 +91,8 @@ export default class CommonScene extends Phaser.Scene {
           Birch_Tree,
           Apple_Tree,
           Grass_Tiles_1,
+          Cave_Floor,
+          Water_Troughs
         ],
         0,
         0,
@@ -124,6 +131,9 @@ export default class CommonScene extends Phaser.Scene {
      if(b?.properties?.dungeon){
        this.scene.start('DungeonScene')
      }
+      if(b?.properties?.bridge){
+        this.scene.start('BridgeScene')
+      }
 
     });
 

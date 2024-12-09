@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import DungeonScene from "./DungeonScene.js";
 import CommonScene from "./CommonScene.js";
+import BridgeScene from "./BridgeScene.js";
 
 export default new Phaser.Game({
   type: Phaser.AUTO,
@@ -13,7 +14,7 @@ export default new Phaser.Game({
       debug: false,
     },
   },
-  scene: [CommonScene, DungeonScene],
+  scene: [CommonScene, DungeonScene, BridgeScene],
   scale: {
     zoom: 3,
   },
