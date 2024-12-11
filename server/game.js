@@ -22,12 +22,12 @@ class Game {
         const player = this.players.get(playerId);
         if (!player) return null;
 
-        // Store original position
+        // original position
         const originalX = player.x;
         const originalY = player.y;
         let moved = false;
 
-        // Calculate new position
+        // new position
         if (input.left) {
             player.x -= this.PLAYER_SPEED;
             moved = true;
@@ -113,15 +113,65 @@ class Game {
     }
 
     addPlayer(socket, playerInfo) {
-        const startPosition = this.getStartPosition(playerInfo.scene);
+        // Initialize player with stats
         this.players.set(socket.id, {
-            x: startPosition.x,
-            y: startPosition.y,
             playerId: socket.id,
+            x: playerInfo.x || 400,
+            y: playerInfo.y || 300,
             scene: playerInfo.scene,
-            animation: this.ANIMATIONS.IDLE.DOWN,
-            flipX: false
+            animation: 'idleDown',
+            flipX: false,
+            // Add stats
+            health: 100,
+            maxHealth: 100,
+            level: 1,
+            xp: 0,
+            maxXp: 100  // Initial XP needed for level 2
         });
+
+        // Send initial stats to player
+        this.sendPlayerStats(socket);
+    }
+
+    sendPlayerStats(socket) {
+        const player = this.players.get(socket.id);
+        if (player) {
+            socket.emit('playerStats', {
+                health: player.health,
+                maxHealth: player.maxHealth,
+                level: player.level,
+                xp: player.xp,
+                maxXp: player.maxXp
+            });
+        }
+    }
+
+    handleDamage(playerId, damage) {
+        const player = this.players.get(playerId);
+        if (player) {
+            player.health = Math.max(0, player.health - damage);
+            this.sendPlayerStats(this.io.sockets.sockets.get(playerId));
+        }
+    }
+
+    addXP(playerId, amount) {
+        const player = this.players.get(playerId);
+        if (player) {
+            player.xp += amount;
+            
+            // Check for level up
+            while (player.xp >= player.maxXp) {
+                player.xp -= player.maxXp;
+                player.level++;
+                // Each level requires 7% more XP
+                player.maxXp = Math.floor(player.maxXp * 1.07);
+                // Increase max health with level
+                player.maxHealth = 100 + (player.level - 1) * 10;
+                player.health = player.maxHealth; // Heal on level up
+            }
+
+            this.sendPlayerStats(this.io.sockets.sockets.get(playerId));
+        }
     }
 
     removePlayer(socketId) {
