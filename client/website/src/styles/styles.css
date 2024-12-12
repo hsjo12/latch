@@ -1,0 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.mediaContainer {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+}
+
+.imageContainer {
+  img {
+    position: relative !important;
+    object-fit: cover;
+    @apply max-w-[350px] xs:max-w-[400px] sm:max-w-[800px];
+  }
+}

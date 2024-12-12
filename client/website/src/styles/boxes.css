@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.guideBox {
+  transition: all 0.2s ease-out;
+  background-color: #002e778a;
+  box-shadow: 5px 5px 10px #000000;
+  @apply w-full text-[whitesmoke] rounded-3xl p-4;
+}
+.roadmapBox {
+  transition: all 0.2s ease-out;
+  background-color: #6301018a;
+  box-shadow: 5px 5px 10px #000000;
+  @apply w-full text-[whitesmoke] rounded-3xl p-4 md:pl-8;
+}
+
+@media (hover: hover) {
+  .guideBox:hover {
+    transition: all 0.2s ease-out;
+    background-color: #0026648a;
+    box-shadow: 7px 7px 20px rgb(0, 0, 0);
+  }
+  .roadmapBox:hover {
+    transition: all 0.2s ease-out;
+    background-color: #4c00008a;
+    box-shadow: 7px 7px 20px rgb(0, 0, 0);
+  }
+}

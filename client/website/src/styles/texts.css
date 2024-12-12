@@ -1,0 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* TEXTS */
+.logo {
+  @apply md:text-4xl text-3xl font-bebas_neue;
+}
+.heroText {
+  text-shadow: 4px 4px 4px rgba(0, 0, 0, 0.8);
+  @apply font-bold font-cinzel_decorative text-[3.2rem] tracking-[0.6rem] md:text-[7rem] md:tracking-[0.8rem];
+}
+.subTitle {
+  @apply text-3xl xl:text-5xl font-bold tracking-[0.4rem] font-cinzel;
+}
+.subTitle2 {
+  @apply text-xl xl:text-2xl tracking-[0.1rem] font-bebas_neue;
+}

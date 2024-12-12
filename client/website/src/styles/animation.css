@@ -1,0 +1,86 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+/* ANIMATION */
+
+.toBottom {
+  animation: fromTopToBottom 1s ease-out;
+}
+.toTop {
+  animation: fromBottomToTop 1s ease-out;
+}
+.toRight {
+  animation: fromLeftToRight 1s ease-out;
+}
+.toRight {
+  animation: fromLeftToRight 1s ease-out;
+}
+.toLeft {
+  animation: fromRightToLeft 1s ease-out;
+}
+
+.showingUp {
+  animation: appear 1s ease-out;
+}
+
+.popUp {
+  animation: popUp 1s ease-out both;
+}
+
+@keyframes fromTopToBottom {
+  0% {
+    transform: translateY(-100px);
+  }
+
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes fromBottomToTop {
+  0% {
+    transform: translateY(100px);
+  }
+
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes fromLeftToRight {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+@keyframes fromRightToLeft {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+@keyframes appear {
+  0% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes popUp {
+  0% {
+    scale: 0.5;
+  }
+
+  100% {
+    scale: 1;
+  }
+}

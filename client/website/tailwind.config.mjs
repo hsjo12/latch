@@ -1,0 +1,26 @@
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: [
+    "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
+  ],
+  theme: {
+    extend: {
+      screens: {
+        xs: "475px",
+      },
+      colors: {
+        "main-color": "#168cff",
+        "highlight-color": "#eba000",
+      },
+      fontFamily: {
+        bebas_neue: ["var(--bebas_neue)"],
+        roboto: ["var(--roboto)"],
+        cinzel_decorative: ["var(--cinzel_decorative)"],
+        cinzel: ["var(--cinzel)"],
+      },
+    },
+  },
+  plugins: [],
+};
