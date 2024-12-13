@@ -31,7 +31,9 @@ export default function Menu({ setOpen, currentPosition, scrollToSection }) {
             </button>
           ))}
 
-          <button className="textBtn">Buy</button>
+          <Link href="/marketplace">
+            <button className="textBtn">Marketplace</button>
+          </Link>
           <button className="textBtn">play</button>
           <button className="appBtn">Connect</button>
         </div>

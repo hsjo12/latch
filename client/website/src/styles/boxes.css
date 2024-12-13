@@ -14,6 +14,11 @@
   box-shadow: 5px 5px 10px #000000;
   @apply w-full text-[whitesmoke] rounded-3xl p-4 md:pl-8;
 }
+.marketBox {
+  background-color: #272727;
+  box-shadow: 5px 5px 10px #000000;
+  @apply w-full text-[whitesmoke] rounded-3xl p-4 md:pl-8;
+}
 
 @media (hover: hover) {
   .guideBox:hover {

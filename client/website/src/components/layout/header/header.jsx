@@ -13,7 +13,10 @@ export default function Header() {
     currentPosition,
     sectionRefs,
     setAnimationOnBySection,
+    headerRef,
+    setHeaderHeight,
   } = useContext(ContextAPI);
+
   const [open, setOpen] = useState(false);
   const scrollToSection = (section) => {
     if (sectionRefs.current[section]) {
@@ -82,9 +85,16 @@ export default function Header() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  useEffect(() => {
+    if (headerRef.current) {
+      setHeaderHeight(headerRef.current.offsetHeight); // Header 높이 계산
+    }
+  }, []);
+
   if (isDesktop) {
     return (
       <nav
+        ref={headerRef}
         className={`w-full fixed top-0 left-0 flex z-50 pt-1 pb-1 ${
           isNavOn ? "bg-[#000000]" : ""
         }`}
@@ -116,7 +126,9 @@ export default function Header() {
             >
               Roadmap
             </button>
-            <button className="textBtn">Buy</button>
+            <Link href="/marketplace">
+              <button className="textBtn">Marketplace</button>
+            </Link>
             <button className="textBtn">play</button>
             <button className="appBtn">Connect</button>
           </div>
@@ -130,7 +142,6 @@ export default function Header() {
           isNavOn ? "bg-[#303030]" : ""
         }`}
       >
-        {" "}
         {open && (
           <Menu
             setOpen={setOpen}

@@ -9,6 +9,8 @@ export function LatchContextAPI({ children }) {
   });
   const [isNavOn, setIsNavOn] = useState(false);
   const sectionRefs = useRef({});
+  const headerRef = useRef(null);
+  const [headerHeight, setHeaderHeight] = useState(0);
   const [currentPosition, setCurrentPosition] = useState("home");
   const [animationOnBySection, setAnimationOnBySection] = useState({});
   const [update, setUpdate] = useState(null);
@@ -28,6 +30,9 @@ export function LatchContextAPI({ children }) {
         currentPosition,
         setCurrentPosition,
         sectionRefs,
+        headerRef,
+        headerHeight,
+        setHeaderHeight,
         animationOnBySection,
         setAnimationOnBySection,
         loadingScreenOn,

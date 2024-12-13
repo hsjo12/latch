@@ -47,7 +47,7 @@ export default function Guide() {
         animationOnBySection?.guide ? "" : "invisible"
       }`}
     >
-      <div className="w-[95%] mx-auto flex flex-col justify-center items-center gap-10">
+      <div className="w-[96%] mx-auto flex flex-col justify-center items-center gap-10">
         <h1
           className={`w-full subTitle text-center ${
             animationOnBySection?.guide ? "popUp" : ""

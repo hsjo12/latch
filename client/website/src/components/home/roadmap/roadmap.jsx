@@ -14,7 +14,7 @@ export default function Roadmap() {
   return (
     <section
       ref={(el) => (sectionRefs.current.roadmap = el)}
-      className={`w-[95%] mx-auto flex flex-col justify-center items-center  ${
+      className={`w-[96%] mx-auto flex flex-col justify-center items-center  ${
         animationOnBySection?.roadmap ? "" : "invisible"
       }`}
     >

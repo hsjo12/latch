@@ -10,7 +10,7 @@ export default function About() {
     return (
       <section
         ref={(el) => (sectionRefs.current.about = el)}
-        className={`w-[95%] mx-auto flex flex-col justify-center items-center ${
+        className={`w-[96%] mx-auto flex flex-col justify-center items-center ${
           animationOnBySection?.about ? "" : "invisible"
         }`}
       >
@@ -61,7 +61,7 @@ export default function About() {
     return (
       <section
         ref={(el) => (sectionRefs.current.about = el)}
-        className="w-[95%] mx-auto flex flex-col justify-center items-center"
+        className="w-[96%] mx-auto flex flex-col justify-center items-center"
       >
         <div className="w-full flex flex-col justify-center items-center gap-5">
           <div
