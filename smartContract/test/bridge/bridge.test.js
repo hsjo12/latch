@@ -20,6 +20,16 @@ const sortList = (list) => {
 };
 
 const GAS_BACK = "0x5d84B43d662CB1787716D4804A6164Efc135FfB6";
+const MANAGER =
+  "0xaf290d8680820aad922855f39b306097b20e28774d6c1ad35a20325630c3a02c";
+const TOKEN_MINTER =
+  "0x262c70cb68844873654dc54487b634cb00850c1e13c785cd0d96a2b89b829472";
+const SHAPECRAFT_KEY_NFT = "0x05aA491820662b131d285757E5DA4b74BD0F0e5F";
+
+const quantity = 3;
+const nftId_0 = 0;
+const nftId_1 = 1;
+const nftId_2 = 2;
 
 const setUp = async () => {
   const [deployer, user1, user2, user3] = await ethers.getSigners();
@@ -32,8 +42,13 @@ const setUp = async () => {
     deployer
   );
 
+  const BridgeVault = await ethers.getContractFactory("BridgeVault");
+  const bridgeVault = await BridgeVault.deploy();
+
   const Bridge = await ethers.getContractFactory("Bridge");
-  const bridge = await Bridge.deploy();
+  const bridge = await Bridge.deploy(bridgeVault.target);
+
+  await bridgeVault.grantRole(MANAGER, bridge.target);
 
   const Items = await ethers.getContractFactory("Items");
   const items = await Items.deploy(
@@ -43,13 +58,43 @@ const setUp = async () => {
     teamVault.target
   );
 
+  const shapecraft_key = await ethers.getContractAt(
+    "IERC721",
+    SHAPECRAFT_KEY_NFT
+  );
+  const keyHolder = await ethers.getImpersonatedSigner(
+    "0xcf58DfE5b2A4e856F5c53F3486CA3870fdD87647"
+  );
+  const KEY_NFT_IDS = [51, 52, 53];
   await items.registerForGasback();
 
+  // To mint GameToken
+  await gameToken.grantRole(TOKEN_MINTER, deployer.address);
+
+  // To transfer key nfts
+  await user1.sendTransaction({
+    value: ethers.parseEther("10"),
+    to: keyHolder.address,
+  });
+  await shapecraft_key
+    .connect(keyHolder)
+    .safeTransferFrom(keyHolder.address, user1.address, KEY_NFT_IDS[0]);
+  await shapecraft_key
+    .connect(keyHolder)
+    .safeTransferFrom(keyHolder.address, user1.address, KEY_NFT_IDS[1]);
+
+  await shapecraft_key
+    .connect(keyHolder)
+    .safeTransferFrom(keyHolder.address, user1.address, KEY_NFT_IDS[2]);
+  await shapecraft_key.connect(user1).setApprovalForAll(bridge.target, true);
+
   await Promise.all(
-    [user1, user2, user3].map(async (v) => {
-      const randomItemTypes = generateRandomItemTypesArray(5);
-      const stats = generateRandomStatsArray(randomItemTypes);
-      await items.mintItems(v.address, randomItemTypes, stats);
+    [user1, user2, user3].map(async (v, i) => {
+      await gameToken.mint(v.address, ethers.parseEther("100000"));
+      await gameToken.connect(v).approve(items.target, ethers.MaxUint256);
+      await items.connect(v).mintItems(nftId_0, quantity);
+      await items.connect(v).mintItems(nftId_1, quantity);
+      await items.connect(v).mintItems(nftId_2, quantity);
       await items.connect(v).setApprovalForAll(bridge.target, true);
     })
   );
@@ -60,98 +105,88 @@ const setUp = async () => {
     user2,
     user3,
     bridge,
+    bridgeVault,
     items,
+    shapecraft_key,
   };
 };
 
 describe("Items Test", () => {
   let deployer, user1, user2, user3;
-  let bridge, items, teamVault;
+  let bridge, items, teamVault, bridgeVault, shapecraft_key;
 
   beforeEach(async () => {
-    ({ deployer, user1, user2, user3, bridge, items } = await loadFixture(
-      setUp
-    ));
+    ({
+      deployer,
+      user1,
+      user2,
+      user3,
+      bridge,
+      items,
+      bridgeVault,
+      shapecraft_key,
+    } = await loadFixture(setUp));
   });
 
-  it("Check if importItem and importItems works fine", async () => {
-    const itemIdsOfUser1 = await items.tokensOfOwner(user1.address);
-
-    await expect(
-      bridge.connect(user1).importItem(items.target, itemIdsOfUser1[0])
-    )
+  it("Check if NFT items (ERC1155) have been imported using the importItem and importItems functions.", async () => {
+    await expect(bridge.connect(user1).importItem(items.target, nftId_0))
       .to.emit(bridge, "Import")
-      .withArgs(user1.address, items.target, itemIdsOfUser1[0]);
+      .withArgs(user1.address, items.target, nftId_0);
 
     await expect(
       bridge
         .connect(user1)
-        .importItems(Array(3).fill(items.target), [
-          itemIdsOfUser1[1],
-          itemIdsOfUser1[2],
-          itemIdsOfUser1[3],
-        ])
+        .importItems(Array(2).fill(items.target), [nftId_1, nftId_2])
     )
       .to.emit(bridge, "Import")
-      .withArgs(user1.address, items.target, itemIdsOfUser1[1])
-      .withArgs(user1.address, items.target, itemIdsOfUser1[2])
-      .withArgs(user1.address, items.target, itemIdsOfUser1[3]);
+      .withArgs(user1.address, items.target, nftId_1)
+      .withArgs(user1.address, items.target, nftId_2);
 
-    expect(await items.tokensOfOwner(bridge.target)).to.deep.eq([
-      itemIdsOfUser1[0],
-      itemIdsOfUser1[1],
-      itemIdsOfUser1[2],
-      itemIdsOfUser1[3],
-    ]);
-
-    expect(
-      await bridge.totalImportedUserItem(user1.address, items.target)
-    ).to.eq(4);
-    expect(
-      await bridge.importedUserItemList(user1.address, items.target, 0, 10)
-    ).to.deep.eq([
-      itemIdsOfUser1[0],
-      itemIdsOfUser1[1],
-      itemIdsOfUser1[2],
-      itemIdsOfUser1[3],
-    ]);
-    expect(await bridge.totalImportedUserItemAddress(user1.address)).to.deep.eq(
-      1
-    );
-    expect(
-      await bridge.importedUserItemAddress(user1.address, 0, 10)
-    ).to.deep.eq([items.target]);
-  });
-  it("Check if exportItem and exportItems works fine", async () => {
-    const itemIdsOfUser1 = await items.tokensOfOwner(user1);
-    await bridge
-      .connect(user1)
-      .importItems(Array(4).fill(items.target), [
-        itemIdsOfUser1[0],
-        itemIdsOfUser1[1],
-        itemIdsOfUser1[2],
-        itemIdsOfUser1[3],
-      ]);
-
-    console.log(
-      "await items.ownerOf(itemIdsOfUser1[0])",
-      await items.ownerOf(itemIdsOfUser1[0])
-    );
-    console.log("bridge", bridge.target);
-    await expect(
-      bridge.connect(user1).exportItem(items.target, itemIdsOfUser1[0])
-    )
-      .to.emit(bridge, "Export")
-      .withArgs(user1.address, items.target, itemIdsOfUser1[0]);
+    expect(await items.balanceOf(bridgeVault.target, nftId_0)).to.eq(1);
+    expect(await items.balanceOf(bridgeVault.target, nftId_1)).to.eq(1);
+    expect(await items.balanceOf(bridgeVault.target, nftId_2)).to.eq(1);
 
     expect(
       await bridge.totalImportedUserItem(user1.address, items.target)
     ).to.eq(3);
+
+    expect(
+      await bridge.importedUserItemList(user1.address, items.target, 0, 10)
+    ).to.deep.eq([nftId_0, nftId_1, nftId_2]);
+
+    expect(await bridge.totalImportedUserItemAddress(user1.address)).to.deep.eq(
+      1
+    );
+    expect(
+      await bridge.importedUserItemAddress(user1.address, 0, 10)
+    ).to.deep.eq([items.target]);
+  });
+
+  it("Check if NFT items (ERC1155) have been exported using the exportItem and exportItems functions.", async () => {
+    await bridge
+      .connect(user1)
+      .importItems(Array(3).fill(items.target), [nftId_0, nftId_1, nftId_2]);
+    expect(await items.balanceOf(bridgeVault.target, nftId_0)).to.eq(1);
+    expect(await items.balanceOf(bridgeVault.target, nftId_1)).to.eq(1);
+    expect(await items.balanceOf(bridgeVault.target, nftId_2)).to.eq(1);
+
+    await expect(bridge.connect(user1).exportItem(items.target, nftId_0))
+      .to.emit(bridge, "Export")
+      .withArgs(user1.address, items.target, nftId_0);
+
+    expect(await items.balanceOf(bridgeVault.target, nftId_0)).to.eq(0);
+    expect(await items.balanceOf(bridgeVault.target, nftId_1)).to.eq(1);
+    expect(await items.balanceOf(bridgeVault.target, nftId_2)).to.eq(1);
+
+    expect(
+      await bridge.totalImportedUserItem(user1.address, items.target)
+    ).to.eq(2);
+
     expect(
       sortList(
         await bridge.importedUserItemList(user1.address, items.target, 0, 10)
       )
-    ).to.deep.eq([itemIdsOfUser1[1], itemIdsOfUser1[2], itemIdsOfUser1[3]]);
+    ).to.deep.eq([nftId_1, nftId_2]);
 
     expect(await bridge.totalImportedUserItemAddress(user1.address)).to.deep.eq(
       1
@@ -163,16 +198,11 @@ describe("Items Test", () => {
     await expect(
       bridge
         .connect(user1)
-        .exportItems(Array(3).fill(items.target), [
-          itemIdsOfUser1[1],
-          itemIdsOfUser1[2],
-          itemIdsOfUser1[3],
-        ])
+        .exportItems(Array(2).fill(items.target), [nftId_1, nftId_2])
     )
       .to.emit(bridge, "Export")
-      .withArgs(user1.address, items.target, 1)
-      .withArgs(user1.address, items.target, 2)
-      .withArgs(user1.address, items.target, 3);
+      .withArgs(user1.address, items.target, nftId_1)
+      .withArgs(user1.address, items.target, nftId_2);
 
     expect(
       await bridge.totalImportedUserItem(user1.address, items.target)
@@ -188,5 +218,128 @@ describe("Items Test", () => {
     expect(
       await bridge.importedUserItemAddress(user1.address, 0, 10)
     ).to.deep.eq([]);
+  });
+
+  it("Check if KEY NFTs (ERC721) have been imported using the importItem and importItems functions.", async () => {
+    const KEY_NFT_IDS = [51, 52, 53];
+    await expect(
+      bridge.connect(user1).importItem(shapecraft_key.target, KEY_NFT_IDS[0])
+    )
+      .to.emit(bridge, "Import")
+      .withArgs(user1.address, shapecraft_key.target, KEY_NFT_IDS[0]);
+
+    expect(await shapecraft_key.balanceOf(bridgeVault.target)).to.eq(1);
+    expect(await shapecraft_key.ownerOf(KEY_NFT_IDS[0])).to.eq(
+      bridgeVault.target
+    );
+
+    await expect(
+      bridge
+        .connect(user1)
+        .importItems(Array(2).fill(shapecraft_key.target), [
+          KEY_NFT_IDS[1],
+          KEY_NFT_IDS[2],
+        ])
+    )
+      .to.emit(bridge, "Import")
+      .withArgs(user1.address, shapecraft_key.target, KEY_NFT_IDS[1])
+      .withArgs(user1.address, shapecraft_key.target, KEY_NFT_IDS[2]);
+    expect(await shapecraft_key.balanceOf(bridgeVault.target)).to.eq(3);
+    expect(await shapecraft_key.ownerOf(KEY_NFT_IDS[1])).to.eq(
+      bridgeVault.target
+    );
+    expect(await shapecraft_key.ownerOf(KEY_NFT_IDS[2])).to.eq(
+      bridgeVault.target
+    );
+    expect(
+      await bridge.totalImportedUserItem(user1.address, shapecraft_key.target)
+    ).to.eq(3);
+
+    expect(
+      await bridge.importedUserItemList(
+        user1.address,
+        shapecraft_key.target,
+        0,
+        10
+      )
+    ).to.deep.eq([KEY_NFT_IDS[0], KEY_NFT_IDS[1], KEY_NFT_IDS[2]]);
+
+    expect(await bridge.totalImportedUserItemAddress(user1.address)).to.deep.eq(
+      1
+    );
+    expect(
+      await bridge.importedUserItemAddress(user1.address, 0, 10)
+    ).to.deep.eq([shapecraft_key.target]);
+  });
+
+  it("Check if KEY NFTs (ERC721) have been exported using the exportItem and exportItems functions.", async () => {
+    const KEY_NFT_IDS = [51, 52, 53];
+
+    await bridge
+      .connect(user1)
+      .importItems(Array(3).fill(shapecraft_key.target), [
+        KEY_NFT_IDS[0],
+        KEY_NFT_IDS[1],
+        KEY_NFT_IDS[2],
+      ]);
+
+    expect(await shapecraft_key.balanceOf(bridgeVault.target)).to.eq(3);
+
+    await expect(
+      bridge.connect(user1).exportItem(shapecraft_key.target, KEY_NFT_IDS[0])
+    )
+      .to.emit(bridge, "Export")
+      .withArgs(user1.address, shapecraft_key.target, KEY_NFT_IDS[0]);
+    expect(await shapecraft_key.balanceOf(bridgeVault.target)).to.eq(2);
+
+    await expect(
+      bridge
+        .connect(user1)
+        .exportItems(Array(2).fill(shapecraft_key.target), [
+          KEY_NFT_IDS[1],
+          KEY_NFT_IDS[2],
+        ])
+    )
+      .to.emit(bridge, "Export")
+      .withArgs(user1.address, shapecraft_key.target, KEY_NFT_IDS[1])
+      .withArgs(user1.address, shapecraft_key.target, KEY_NFT_IDS[2]);
+
+    expect(await shapecraft_key.balanceOf(bridgeVault.target)).to.eq(0);
+
+    expect(
+      await bridge.totalImportedUserItem(user1.address, shapecraft_key.target)
+    ).to.eq(0);
+    expect(
+      sortList(
+        await bridge.importedUserItemList(
+          user1.address,
+          shapecraft_key.target,
+          0,
+          10
+        )
+      )
+    ).to.deep.eq([]);
+    expect(await bridge.totalImportedUserItemAddress(user1.address)).to.deep.eq(
+      0
+    );
+    expect(
+      await bridge.importedUserItemAddress(user1.address, 0, 10)
+    ).to.deep.eq([]);
+  });
+
+  it.only("Check if revert statements works", async () => {
+    await expect(
+      bridge.connect(user1).importItem(user2.address, nftId_1)
+    ).to.revertedWithCustomError(bridge, "InvalidItemType");
+
+    await expect(
+      bridge
+        .connect(user1)
+        .importItems(Array(2).fill(items.target), [nftId_1, nftId_1])
+    ).to.revertedWithCustomError(bridge, "MultipleItemsNotAllowed");
+
+    await expect(
+      bridge.connect(user1).exportItem(items.target, nftId_1)
+    ).to.revertedWithCustomError(bridge, "NonExistentItem");
   });
 });
