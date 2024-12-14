@@ -238,6 +238,7 @@ export default class CommonScene extends Phaser.Scene {
           playerInfo.x,
           playerInfo.y
         )
+        this.otherPlayers[playerInfo.playerId].anims.play(playerInfo.animation, true)
       }
     })
 
@@ -286,13 +287,16 @@ export default class CommonScene extends Phaser.Scene {
     // Stop any previous movement from the last frame
     this.player.body.setVelocity(0)
 
+    let animation = 'idleDown'
     // Horizontal movement
     if (this.cursors.left.isDown) {
       this.player.body.setVelocityX(-speed)
+      animation = 'walkLeft'
       this.player.anims.play('walkRight', true) // Assuming you have a 'walkLeft' animation
       this.player.flipX = true // Flip the sprite to face left
     } else if (this.cursors.right.isDown) {
       this.player.body.setVelocityX(speed)
+      animation = 'walkRight'
       this.player.anims.play('walkRight', true)
       this.player.flipX = false // Ensure the sprite is facing right
     }
@@ -300,10 +304,12 @@ export default class CommonScene extends Phaser.Scene {
     // Vertical movement
     if (this.cursors.up.isDown) {
       this.player.body.setVelocityY(-speed)
+      animation = 'walkUp'
       this.player.anims.play('walkUp', true)
     } else if (this.cursors.down.isDown) {
       console.log('not')
       this.player.body.setVelocityY(speed)
+      animation = 'walkDown'
       this.player.anims.play('walkDown', true)
     }
 
@@ -313,9 +319,16 @@ export default class CommonScene extends Phaser.Scene {
     // Emit the player's new position to the server at regular intervals
     if (time - this.lastEmitTime > 5) {
       // Emit every 50ms
-      this.socket.emit('movePlayer', { x: this.player.x, y: this.player.y })
+      this.socket.emit('movePlayer', {
+        x: this.player.x,
+        y: this.player.y,
+        animation: animation,
+      })
       this.lastEmitTime = time
     }
+
+    // Play the appropriate animation
+    this.player.anims.play(animation, true)
 
     // If no movement keys are pressed, stop the animation
     if (
@@ -326,7 +339,7 @@ export default class CommonScene extends Phaser.Scene {
     ) {
       this.player.anims.stop()
       // Emit the player's new position to the server
-      this.socket.emit('movePlayer', { x: this.player.x, y: this.player.y })
+      this.socket.emit('movePlayer', { x: this.player.x, y: this.player.y,animation: 'idleDown' })
 
       // Set idle animation based on the last direction
       if (prevVelocity.x < 0) {
