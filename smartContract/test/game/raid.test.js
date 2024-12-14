@@ -20,59 +20,60 @@ const TOKEN_MINTER =
 const setUp = async () => {
   const [deployer, user1, user2, user3, tokenMinter] =
     await ethers.getSigners();
-  const GameToken = await ethers.getContractFactory("GameToken");
-  const gameToken = await GameToken.deploy();
-
-  const TestERC1155 = await ethers.getContractFactory("TestERC1155");
-  const testERC1155 = await TestERC1155.deploy();
+  const Latch = await ethers.getContractFactory("Latch");
+  const latch = await Latch.deploy();
 
   const TeamVault = await ethers.getContractFactory("TeamVault");
-  const teamVault = await TeamVault.deploy(
+  const teamVault = await TeamVault.deploy(GAS_BACK, latch.target, deployer);
+
+  const Items = await ethers.getContractFactory("Items");
+  const items = await Items.deploy(
     GAS_BACK,
-    gameToken.target,
-    deployer
+    latch.target,
+    deployer.address,
+    teamVault.target
   );
 
   const RaidVault = await ethers.getContractFactory("RaidVault");
-  const raidVault = await RaidVault.deploy(gameToken.target, deployer);
+  const raidVault = await RaidVault.deploy(latch.target, deployer);
 
   const Raid = await ethers.getContractFactory("Raid");
   const raid = await Raid.deploy(
-    gameToken.target,
+    latch.target,
     deployer.address,
     raidVault.target,
     teamVault.target
   );
-  await gameToken.grantRole(TOKEN_MINTER, tokenMinter.address);
+  await latch.grantRole(TOKEN_MINTER, tokenMinter.address);
   await raidVault.grantRole(DISTRIBUTOR, raid.target);
-  await testERC1155.mint(deployer.address, 1, 100);
-  await testERC1155.setApprovalForAll(raid.target, true);
 
   await Promise.all(
     [deployer, user1, user2, user3].map(async (v) => {
-      await gameToken.connect(v).approve(raid.target, ethers.MaxUint256);
-      await gameToken
+      await latch.connect(v).approve(raid.target, ethers.MaxUint256);
+      await latch
         .connect(tokenMinter)
         .mint(v.address, ethers.parseEther("1000"));
     })
   );
-
+  await latch.approve(items.target, ethers.MaxUint256);
+  await items.mintItems(1, 100);
+  await items.setApprovalForAll(raid.target, true);
   return {
     deployer,
     user1,
     user2,
     user3,
-    gameToken,
+    latch,
     teamVault,
     raidVault,
     raid,
-    testERC1155,
+    items,
   };
 };
 
 describe("Raid Test", () => {
   let deployer, user1, user2, user3;
-  let gameToken, teamVault, raidVault, raid, testERC1155;
+  let latch, teamVault, raidVault, raid, items;
 
   beforeEach(async () => {
     ({
@@ -80,8 +81,8 @@ describe("Raid Test", () => {
       user1,
       user2,
       user3,
-      gameToken,
-      testERC1155,
+      latch,
+      items,
       teamVault,
       raidVault,
       raid,
@@ -98,21 +99,16 @@ describe("Raid Test", () => {
     const maxParticipants = 10;
     const raidId_1 = await raid.id();
 
-    const battingTokenBalanceOfRaidVault = await gameToken.balanceOf(
+    const battingTokenBalanceOfRaidVault = await latch.balanceOf(
       raidVault.target
     );
-    const testERC115BalanceOfRaidVault = await testERC1155.balanceOf(
+    const testERC115BalanceOfRaidVault = await items.balanceOf(
       raidVault.target,
       1
     );
 
-    const ERC20PrizeInfo = [0, gameToken.target, 0, prizeERC20TokenAmount];
-    const ERC1155PrizeInfo = [
-      1,
-      testERC1155.target,
-      1,
-      prizeERC1155TokenAmount,
-    ];
+    const ERC20PrizeInfo = [0, latch.target, 0, prizeERC20TokenAmount];
+    const ERC1155PrizeInfo = [1, items.target, 1, prizeERC1155TokenAmount];
     const prizeInfoList = [ERC20PrizeInfo, ERC1155PrizeInfo];
 
     await expect(
@@ -137,7 +133,7 @@ describe("Raid Test", () => {
       maxParticipants
     );
 
-    expect(await raid.raidIdList(0, 10)).to.deep.eq([raidId_1, raidId_2]);
+    expect(await raid.getRaidIdList(0, 10)).to.deep.eq([raidId_1, raidId_2]);
 
     expect(await raid.getRaidInfoInfoById(raidId_1)).to.deep.eq([
       prizeInfoList,
@@ -149,13 +145,13 @@ describe("Raid Test", () => {
       false,
     ]);
 
-    expect(await gameToken.balanceOf(raidVault.target)).to.eq(
+    expect(await latch.balanceOf(raidVault.target)).to.eq(
       battingTokenBalanceOfRaidVault + prizeERC20TokenAmount * 2n
     );
-    expect(await testERC1155.balanceOf(raidVault.target, 1)).to.eq(
+    expect(await items.balanceOf(raidVault.target, 1)).to.eq(
       testERC115BalanceOfRaidVault + prizeERC1155TokenAmount * 2n
     );
-    expect(await raid.raidIdList(0, 10)).to.deep.eq([raidId_1, raidId_2]);
+    expect(await raid.getRaidIdList(0, 10)).to.deep.eq([raidId_1, raidId_2]);
   });
 
   it("Check if joinRaid works fine", async () => {
@@ -163,22 +159,17 @@ describe("Raid Test", () => {
     const prizeERC1155TokenAmount = 10n;
     const raidFee = ethers.parseEther("10");
 
-    const openingTime = Math.floor(new Date().getTime() / 1000);
+    const openingTime = Math.floor(new Date().getTime() / 1000) - 10000;
     const closingTime = Math.floor(new Date().getTime() / 1000) + 36000;
     const maxParticipants = 10;
     const raidId_1 = await raid.id();
 
-    const battingTokenBalanceOfTeamVault = await gameToken.balanceOf(
+    const battingTokenBalanceOfTeamVault = await latch.balanceOf(
       teamVault.target
     );
 
-    const ERC20PrizeInfo = [0, gameToken.target, 0, prizeERC20TokenAmount];
-    const ERC1155PrizeInfo = [
-      1,
-      testERC1155.target,
-      1,
-      prizeERC1155TokenAmount,
-    ];
+    const ERC20PrizeInfo = [0, latch.target, 0, prizeERC20TokenAmount];
+    const ERC1155PrizeInfo = [1, items.target, 1, prizeERC1155TokenAmount];
     const prizeInfoList = [ERC20PrizeInfo, ERC1155PrizeInfo];
 
     await raid.createRaid(
@@ -203,13 +194,9 @@ describe("Raid Test", () => {
       false,
     ]);
 
-    expect(await gameToken.balanceOf(teamVault.target)).to.eq(
+    expect(await latch.balanceOf(teamVault.target)).to.eq(
       battingTokenBalanceOfTeamVault + raidFee
     );
-    expect(await raid.raidStatusByUser(raidId_1, user1.address)).to.deep.eq([
-      true,
-      false,
-    ]);
   });
 
   it("Check if removeRaid works fine", async () => {
@@ -222,13 +209,8 @@ describe("Raid Test", () => {
     const maxParticipants = 10;
     const raidId_1 = await raid.id();
 
-    const ERC20PrizeInfo = [0, gameToken.target, 0, prizeERC20TokenAmount];
-    const ERC1155PrizeInfo = [
-      1,
-      testERC1155.target,
-      1,
-      prizeERC1155TokenAmount,
-    ];
+    const ERC20PrizeInfo = [0, latch.target, 0, prizeERC20TokenAmount];
+    const ERC1155PrizeInfo = [1, items.target, 1, prizeERC1155TokenAmount];
     const prizeInfoList = [ERC20PrizeInfo, ERC1155PrizeInfo];
 
     await raid.createRaid(
@@ -243,7 +225,7 @@ describe("Raid Test", () => {
       .to.emit(raid, "Remove")
       .withArgs(raidId_1, deployer.address);
 
-    expect(await raid.raidIdList(0, 10)).to.deep.eq([]);
+    expect(await raid.getRaidIdList(0, 10)).to.deep.eq([]);
   });
 
   it("Check if complete works fine", async () => {
@@ -256,13 +238,8 @@ describe("Raid Test", () => {
     const maxParticipants = 10;
     const raidId_1 = await raid.id();
 
-    const ERC20PrizeInfo = [0, gameToken.target, 0, prizeERC20TokenAmount];
-    const ERC1155PrizeInfo = [
-      1,
-      testERC1155.target,
-      1,
-      prizeERC1155TokenAmount,
-    ];
+    const ERC20PrizeInfo = [0, latch.target, 0, prizeERC20TokenAmount];
+    const ERC1155PrizeInfo = [1, items.target, 1, prizeERC1155TokenAmount];
     const prizeInfoList = [ERC20PrizeInfo, ERC1155PrizeInfo];
 
     await raid.createRaid(
@@ -291,18 +268,13 @@ describe("Raid Test", () => {
     const prizeERC1155TokenAmount = 10n;
     const raidFee = ethers.parseEther("10");
 
-    const openingTime = Math.floor(new Date().getTime() / 1000);
+    const openingTime = Math.floor(new Date().getTime() / 1000) - 10000;
     const closingTime = Math.floor(new Date().getTime() / 1000) + 36000;
     const maxParticipants = 10n;
     const raidId_1 = await raid.id();
 
-    const ERC20PrizeInfo = [0, gameToken.target, 0, prizeERC20TokenAmount];
-    const ERC1155PrizeInfo = [
-      1,
-      testERC1155.target,
-      1,
-      prizeERC1155TokenAmount,
-    ];
+    const ERC20PrizeInfo = [0, latch.target, 0, prizeERC20TokenAmount];
+    const ERC1155PrizeInfo = [1, items.target, 1, prizeERC1155TokenAmount];
     const prizeInfoList = [ERC20PrizeInfo, ERC1155PrizeInfo];
 
     await raid.createRaid(
@@ -316,28 +288,22 @@ describe("Raid Test", () => {
     await raid.connect(user1).joinRaid(raidId_1);
     await raid.connect(user2).joinRaid(raidId_1);
 
-    expect(await raid.raidIdsList(0, 10)).to.deep.eq([raidId_1]);
+    expect(await raid.getRaidIdList(0, 10)).to.deep.eq([raidId_1]);
 
-    expect(await raid.userRaidIdList(user1.address, 0, 10)).to.deep.eq([
+    expect(await raid.getUserRaidIdList(user1.address, 0, 10)).to.deep.eq([
       raidId_1,
     ]);
-    expect(await raid.userRaidIdList(user2.address, 0, 10)).to.deep.eq([
+    expect(await raid.getUserRaidIdList(user2.address, 0, 10)).to.deep.eq([
       raidId_1,
     ]);
 
     await raid.complete(raidId_1);
 
-    const erc20PrizeBalanceOfUser1 = await gameToken.balanceOf(user1.address);
-    const erc20PrizeBalanceOfUser2 = await gameToken.balanceOf(user2.address);
+    const erc20PrizeBalanceOfUser1 = await latch.balanceOf(user1.address);
+    const erc20PrizeBalanceOfUser2 = await latch.balanceOf(user2.address);
 
-    const erc1155PrizeBalanceOfUser1 = await testERC1155.balanceOf(
-      user1.address,
-      1
-    );
-    const erc1155PrizeBalanceOfUser2 = await testERC1155.balanceOf(
-      user2.address,
-      1
-    );
+    const erc1155PrizeBalanceOfUser1 = await items.balanceOf(user1.address, 1);
+    const erc1155PrizeBalanceOfUser2 = await items.balanceOf(user2.address, 1);
     await expect(raid.connect(user1).claimPrize(raidId_1))
       .to.emit(raid, "ClaimPrize")
       .withArgs(raidId_1, user1.address);
@@ -348,23 +314,23 @@ describe("Raid Test", () => {
 
     const erc20PrizeAmount = prizeERC20TokenAmount / maxParticipants;
     const erc1155PrizeAmount = 1n;
-    expect(await gameToken.balanceOf(user1.address)).to.eq(
+    expect(await latch.balanceOf(user1.address)).to.eq(
       erc20PrizeBalanceOfUser1 + erc20PrizeAmount
     );
-    expect(await gameToken.balanceOf(user2.address)).to.eq(
+    expect(await latch.balanceOf(user2.address)).to.eq(
       erc20PrizeBalanceOfUser2 + erc20PrizeAmount
     );
 
-    expect(await testERC1155.balanceOf(user1.address, 1)).to.eq(
+    expect(await items.balanceOf(user1.address, 1)).to.eq(
       erc1155PrizeBalanceOfUser1 + erc1155PrizeAmount
     );
-    expect(await testERC1155.balanceOf(user2.address, 1)).to.eq(
+    expect(await items.balanceOf(user2.address, 1)).to.eq(
       erc1155PrizeBalanceOfUser2 + erc1155PrizeAmount
     );
 
-    expect(await raid.raidIdsList(0, 10)).to.deep.eq([]);
-    expect(await raid.userRaidIdList(user1.address, 0, 10)).to.deep.eq([]);
-    expect(await raid.userRaidIdList(user2.address, 0, 10)).to.deep.eq([]);
+    expect(await raid.getRaidIdList(0, 10)).to.deep.eq([]);
+    expect(await raid.getUserRaidIdList(user1.address, 0, 10)).to.deep.eq([]);
+    expect(await raid.getUserRaidIdList(user2.address, 0, 10)).to.deep.eq([]);
   });
 
   it("Check if withdrawLeftoverPrize works fine", async () => {
@@ -372,18 +338,13 @@ describe("Raid Test", () => {
     const prizeERC1155TokenAmount = 10n;
     const raidFee = ethers.parseEther("10");
 
-    const openingTime = Math.floor(new Date().getTime() / 1000);
+    const openingTime = Math.floor(new Date().getTime() / 1000) - 10000;
     const closingTime = Math.floor(new Date().getTime() / 1000) + 36000;
     const maxParticipants = 10n;
     const raidId_1 = await raid.id();
 
-    const ERC20PrizeInfo = [0, gameToken.target, 0, prizeERC20TokenAmount];
-    const ERC1155PrizeInfo = [
-      1,
-      testERC1155.target,
-      1,
-      prizeERC1155TokenAmount,
-    ];
+    const ERC20PrizeInfo = [0, latch.target, 0, prizeERC20TokenAmount];
+    const ERC1155PrizeInfo = [1, items.target, 1, prizeERC1155TokenAmount];
     const prizeInfoList = [ERC20PrizeInfo, ERC1155PrizeInfo];
 
     await raid.createRaid(
@@ -399,10 +360,8 @@ describe("Raid Test", () => {
 
     await raid.complete(raidId_1);
 
-    const erc20PrizeBalanceOfDeployer = await gameToken.balanceOf(
-      deployer.address
-    );
-    const erc1155PrizeBalanceOfDeployer = await testERC1155.balanceOf(
+    const erc20PrizeBalanceOfDeployer = await latch.balanceOf(deployer.address);
+    const erc1155PrizeBalanceOfDeployer = await items.balanceOf(
       deployer.address,
       1
     );
@@ -413,10 +372,10 @@ describe("Raid Test", () => {
     const leftOverERC1155Prize =
       prizeERC1155TokenAmount - BigInt(prizeInfoList.length);
 
-    expect(await gameToken.balanceOf(deployer.address)).to.eq(
+    expect(await latch.balanceOf(deployer.address)).to.eq(
       erc20PrizeBalanceOfDeployer + leftOverERC20Prize
     );
-    expect(await testERC1155.balanceOf(deployer.address, 1)).to.eq(
+    expect(await items.balanceOf(deployer.address, 1)).to.eq(
       erc1155PrizeBalanceOfDeployer + leftOverERC1155Prize
     );
   });
@@ -431,17 +390,12 @@ describe("Raid Test", () => {
     const maxParticipants = 10;
     const raidId_1 = await raid.id();
 
-    const battingTokenBalanceOfTeamVault = await gameToken.balanceOf(
+    const battingTokenBalanceOfTeamVault = await latch.balanceOf(
       teamVault.target
     );
 
-    const ERC20PrizeInfo = [0, gameToken.target, 0, prizeERC20TokenAmount];
-    const ERC1155PrizeInfo = [
-      1,
-      testERC1155.target,
-      1,
-      prizeERC1155TokenAmount,
-    ];
+    const ERC20PrizeInfo = [0, latch.target, 0, prizeERC20TokenAmount];
+    const ERC1155PrizeInfo = [1, items.target, 1, prizeERC1155TokenAmount];
     const prizeInfoList = [ERC20PrizeInfo, ERC1155PrizeInfo];
 
     await expect(
@@ -477,17 +431,12 @@ describe("Raid Test", () => {
     let maxParticipants = 0;
     const raidId_1 = await raid.id();
 
-    const battingTokenBalanceOfTeamVault = await gameToken.balanceOf(
+    const battingTokenBalanceOfTeamVault = await latch.balanceOf(
       teamVault.target
     );
 
-    const ERC20PrizeInfo = [0, gameToken.target, 0, prizeERC20TokenAmount];
-    const ERC1155PrizeInfo = [
-      1,
-      testERC1155.target,
-      1,
-      prizeERC1155TokenAmount,
-    ];
+    const ERC20PrizeInfo = [0, latch.target, 0, prizeERC20TokenAmount];
+    const ERC1155PrizeInfo = [1, items.target, 1, prizeERC1155TokenAmount];
     const prizeInfoList = [ERC20PrizeInfo, ERC1155PrizeInfo];
     await raid.createRaid(
       prizeInfoList,
@@ -563,13 +512,8 @@ describe("Raid Test", () => {
     const maxParticipants = 10;
     const raidId_1 = await raid.id();
 
-    const ERC20PrizeInfo = [0, gameToken.target, 0, prizeERC20TokenAmount];
-    const ERC1155PrizeInfo = [
-      1,
-      testERC1155.target,
-      1,
-      prizeERC1155TokenAmount,
-    ];
+    const ERC20PrizeInfo = [0, latch.target, 0, prizeERC20TokenAmount];
+    const ERC1155PrizeInfo = [1, items.target, 1, prizeERC1155TokenAmount];
     const prizeInfoList = [ERC20PrizeInfo, ERC1155PrizeInfo];
 
     await raid.createRaid(
@@ -593,13 +537,8 @@ describe("Raid Test", () => {
     const maxParticipants = 10;
     const raidId_1 = await raid.id();
 
-    const ERC20PrizeInfo = [0, gameToken.target, 0, prizeERC20TokenAmount];
-    const ERC1155PrizeInfo = [
-      1,
-      testERC1155.target,
-      1,
-      prizeERC1155TokenAmount,
-    ];
+    const ERC20PrizeInfo = [0, latch.target, 0, prizeERC20TokenAmount];
+    const ERC1155PrizeInfo = [1, items.target, 1, prizeERC1155TokenAmount];
     const prizeInfoList = [ERC20PrizeInfo, ERC1155PrizeInfo];
 
     await raid.createRaid(
@@ -628,13 +567,8 @@ describe("Raid Test", () => {
     const maxParticipants = 10;
     const raidId_1 = await raid.id();
 
-    const ERC20PrizeInfo = [0, gameToken.target, 0, prizeERC20TokenAmount];
-    const ERC1155PrizeInfo = [
-      1,
-      testERC1155.target,
-      1,
-      prizeERC1155TokenAmount,
-    ];
+    const ERC20PrizeInfo = [0, latch.target, 0, prizeERC20TokenAmount];
+    const ERC1155PrizeInfo = [1, items.target, 1, prizeERC1155TokenAmount];
     const prizeInfoList = [ERC20PrizeInfo, ERC1155PrizeInfo];
 
     await raid.createRaid(
@@ -675,13 +609,8 @@ describe("Raid Test", () => {
     const maxParticipants = 1;
     const raidId_1 = await raid.id();
 
-    const ERC20PrizeInfo = [0, gameToken.target, 0, prizeERC20TokenAmount];
-    const ERC1155PrizeInfo = [
-      1,
-      testERC1155.target,
-      1,
-      prizeERC1155TokenAmount,
-    ];
+    const ERC20PrizeInfo = [0, latch.target, 0, prizeERC20TokenAmount];
+    const ERC1155PrizeInfo = [1, items.target, 1, prizeERC1155TokenAmount];
     const prizeInfoList = [ERC20PrizeInfo, ERC1155PrizeInfo];
 
     await raid.createRaid(

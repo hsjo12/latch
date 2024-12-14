@@ -19,32 +19,28 @@ const TOKEN_MINTER =
 const setUp = async () => {
   const [deployer, user1, user2, user3, tokenMinter] =
     await ethers.getSigners();
-  const GameToken = await ethers.getContractFactory("GameToken");
-  const gameToken = await GameToken.deploy();
+  const Latch = await ethers.getContractFactory("Latch");
+  const latch = await Latch.deploy();
   const TeamVault = await ethers.getContractFactory("TeamVault");
-  const teamVault = await TeamVault.deploy(
-    GAS_BACK,
-    gameToken.target,
-    deployer
-  );
+  const teamVault = await TeamVault.deploy(GAS_BACK, latch.target, deployer);
 
   const PvpVault = await ethers.getContractFactory("PvpVault");
-  const pvpVault = await PvpVault.deploy(gameToken.target, deployer);
+  const pvpVault = await PvpVault.deploy(latch.target, deployer);
 
   const Pvp = await ethers.getContractFactory("Pvp");
   const pvp = await Pvp.deploy(
-    gameToken.target,
+    latch.target,
     deployer.address,
     pvpVault.target,
     teamVault.target
   );
-  await gameToken.grantRole(TOKEN_MINTER, tokenMinter.address);
+  await latch.grantRole(TOKEN_MINTER, tokenMinter.address);
   await pvpVault.grantRole(DISTRIBUTOR, pvp.target);
 
   await Promise.all(
     [user1, user2, user3].map(async (v) => {
-      await gameToken.connect(v).approve(pvp.target, ethers.MaxUint256);
-      await gameToken
+      await latch.connect(v).approve(pvp.target, ethers.MaxUint256);
+      await latch
         .connect(tokenMinter)
         .mint(v.address, ethers.parseEther("1000"));
     })
@@ -55,7 +51,7 @@ const setUp = async () => {
     user1,
     user2,
     user3,
-    gameToken,
+    latch,
     teamVault,
     pvpVault,
     pvp,
@@ -64,18 +60,18 @@ const setUp = async () => {
 
 describe("Pvp Test", () => {
   let deployer, user1, user2, user3;
-  let gameToken, teamVault, pvpVault, pvp;
+  let latch, teamVault, pvpVault, pvp;
 
   beforeEach(async () => {
-    ({ deployer, user1, user2, user3, gameToken, teamVault, pvpVault, pvp } =
+    ({ deployer, user1, user2, user3, latch, teamVault, pvpVault, pvp } =
       await loadFixture(setUp));
   });
 
   it("Check if createPvp works fine", async () => {
     const battingAmount = ethers.parseEther("10");
     const first_pvpId = await pvp.id();
-    const battingTokenBalanceOfUser1 = await gameToken.balanceOf(user1.address);
-    const battingTokenBalanceOfPvpVault = await gameToken.balanceOf(
+    const battingTokenBalanceOfUser1 = await latch.balanceOf(user1.address);
+    const battingTokenBalanceOfPvpVault = await latch.balanceOf(
       pvpVault.target
     );
 
@@ -98,11 +94,11 @@ describe("Pvp Test", () => {
       false,
     ]);
 
-    expect(await gameToken.balanceOf(user1.address)).to.eq(
+    expect(await latch.balanceOf(user1.address)).to.eq(
       battingTokenBalanceOfUser1 - battingAmount
     );
 
-    expect(await gameToken.balanceOf(pvpVault.target)).to.eq(
+    expect(await latch.balanceOf(pvpVault.target)).to.eq(
       battingTokenBalanceOfPvpVault + battingAmount + battingAmount
     );
   });
@@ -112,8 +108,8 @@ describe("Pvp Test", () => {
     const first_pvpId = await pvp.id();
     await pvp.connect(user1).createPvp(battingAmount);
 
-    const battingTokenBalanceOfUser2 = await gameToken.balanceOf(user2.address);
-    const battingTokenBalanceOfPvpVault = await gameToken.balanceOf(
+    const battingTokenBalanceOfUser2 = await latch.balanceOf(user2.address);
+    const battingTokenBalanceOfPvpVault = await latch.balanceOf(
       pvpVault.target
     );
 
@@ -122,11 +118,11 @@ describe("Pvp Test", () => {
       .withArgs(first_pvpId, user2.address, battingAmount);
 
     expect(await pvp.pvpByUser(user2.address)).to.eq(first_pvpId);
-    expect(await gameToken.balanceOf(user1.address)).to.eq(
+    expect(await latch.balanceOf(user1.address)).to.eq(
       battingTokenBalanceOfUser2 - battingAmount
     );
 
-    expect(await gameToken.balanceOf(pvpVault.target)).to.eq(
+    expect(await latch.balanceOf(pvpVault.target)).to.eq(
       battingTokenBalanceOfPvpVault + battingAmount
     );
 
@@ -146,19 +142,19 @@ describe("Pvp Test", () => {
     const first_pvpId = await pvp.id();
     await pvp.connect(user1).createPvp(battingAmount);
 
-    const battingTokenBalanceOfUser1 = await gameToken.balanceOf(user1.address);
-    const battingTokenBalanceOfPvpVault = await gameToken.balanceOf(
+    const battingTokenBalanceOfUser1 = await latch.balanceOf(user1.address);
+    const battingTokenBalanceOfPvpVault = await latch.balanceOf(
       pvpVault.target
     );
     await expect(pvp.connect(user1).removePvp(first_pvpId))
       .to.emit(pvp, "Remove")
       .withArgs(first_pvpId, user1.address, battingAmount);
 
-    expect(await gameToken.balanceOf(user1.address)).to.eq(
+    expect(await latch.balanceOf(user1.address)).to.eq(
       battingTokenBalanceOfUser1 + battingAmount
     );
 
-    expect(await gameToken.balanceOf(pvpVault.target)).to.eq(
+    expect(await latch.balanceOf(pvpVault.target)).to.eq(
       battingTokenBalanceOfPvpVault - battingAmount
     );
     expect(await pvp.pvpByUser(user1.address)).to.eq(none_pvpId);
@@ -184,19 +180,17 @@ describe("Pvp Test", () => {
 
     let totalPrize = (await pvp.pvpInfoById(first_pvpId)).totalPrize;
     const toTeam = (totalPrize * teamTax) / 10_000n;
-    const battingTokenBalanceOfUser1 = await gameToken.balanceOf(user1.address);
-    const battingTokenBalanceOfTeam = await gameToken.balanceOf(
-      teamVault.target
-    );
+    const battingTokenBalanceOfUser1 = await latch.balanceOf(user1.address);
+    const battingTokenBalanceOfTeam = await latch.balanceOf(teamVault.target);
     totalPrize = totalPrize - toTeam;
     await expect(pvp.announce(user1.address, first_pvpId))
       .to.emit(pvp, "Announce")
       .withArgs(first_pvpId, user1.address, totalPrize);
 
-    expect(await gameToken.balanceOf(user1.address)).to.eq(
+    expect(await latch.balanceOf(user1.address)).to.eq(
       battingTokenBalanceOfUser1 + totalPrize
     );
-    expect(await gameToken.balanceOf(teamVault.target)).to.eq(
+    expect(await latch.balanceOf(teamVault.target)).to.eq(
       battingTokenBalanceOfTeam + toTeam
     );
     expect(await pvp.pvpInfoById(first_pvpId)).to.deep.eq([

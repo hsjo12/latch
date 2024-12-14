@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.27;
+pragma solidity =0.8.28;
 
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
@@ -30,12 +30,12 @@ contract Items is  ERC1155, AccessControl {
     uint256 public price = 1 ether;
     address public teamVault;
     address public owner;
-    IERC20 public gameToken;
+    IERC20 public token;
     string public baseURI;
     
     constructor(
         IGasback _gasback,
-        IERC20 _gameToken,
+        IERC20 _token,
         address _item_minter,
         address _teamVault
     ) 
@@ -43,7 +43,7 @@ contract Items is  ERC1155, AccessControl {
     {
         gasback = _gasback;
         owner = msg.sender;
-        gameToken = _gameToken;
+        token = _token;
         teamVault = _teamVault;
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(MANAGER, msg.sender);
@@ -55,7 +55,7 @@ contract Items is  ERC1155, AccessControl {
     }
     
     function mintItems(uint256 _id, uint256 _quantity) external {
-        gameToken.transferFrom(msg.sender, teamVault, _quantity * price);
+        token.transferFrom(msg.sender, teamVault, _quantity * price);
         _mint(msg.sender, _id, _quantity, ""); 
     }
 
@@ -100,13 +100,13 @@ contract Items is  ERC1155, AccessControl {
         teamVault = _teamVault;
     }
 
-    function setGameToken(
-        IERC20 _gameToken
+    function setToken(
+        IERC20 _token
     ) 
         external 
         onlyRole(MANAGER) 
     {
-        gameToken = _gameToken;
+        token = _token;
     }
 
     function setBaseURI(string memory _baseURI) external onlyRole(MANAGER) {

@@ -1,15 +1,16 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.27;
+pragma solidity =0.8.28;
 
-import { IGameToken } from "../interfaces/IGameToken.sol";
-import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
+import {ILatch} from "../interfaces/ILatch.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
+
 contract TokenMarket is ReentrancyGuard, AccessControl {
 
     bytes32 constant MANAGER = 0xaf290d8680820aad922855f39b306097b20e28774d6c1ad35a20325630c3a02c;
 
     // immutable
-    IGameToken public immutable SALE_TOKEN;
+    ILatch public immutable SALE_TOKEN;
 
     event Buy(address indexed buyer, uint256 tokenAmount);
     event Sell(address indexed seller, uint256 ethAmount);
@@ -21,7 +22,7 @@ contract TokenMarket is ReentrancyGuard, AccessControl {
 
     uint256 public pricePerToken = 0.001 ether;
 
-    constructor(IGameToken _saleToken) {
+    constructor(ILatch _saleToken) {
         SALE_TOKEN =  _saleToken;
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(MANAGER,  msg.sender);

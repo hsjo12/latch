@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.27;
-import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { IPvpAndRaidVault } from "../interfaces/IPvpAndRaidVault.sol";
-import { IRaidPrize } from "../interfaces/IRaidPrize.sol";
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { IERC1155 } from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
+pragma solidity =0.8.28;
+
+import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IPvpAndRaidVault} from "../interfaces/IPvpAndRaidVault.sol";
+import {IRaidPrize} from "../interfaces/IRaidPrize.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 
 contract Raid is AccessControl, IRaidPrize {
 
@@ -222,7 +223,7 @@ contract Raid is AccessControl, IRaidPrize {
      
     }
 
-    function raidIdsList (
+    function getRaidIdList (
         uint256 _offset,
         uint256 _size
     ) 
@@ -243,7 +244,7 @@ contract Raid is AccessControl, IRaidPrize {
        
     }
 
-    function userRaidIdList (
+    function getUserRaidIdList (
         address _user,
         uint256 _offset,
         uint256 _size
