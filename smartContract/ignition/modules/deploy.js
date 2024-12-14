@@ -1,8 +1,11 @@
 // This setup uses Hardhat Ignition to manage smart contract deployments.
 // Learn more about it at https://hardhat.org/ignition
+const hre = require("hardhat");
 
 const { buildModule } = require("@nomicfoundation/hardhat-ignition/modules");
-const GAS_BACK = "0x5d84B43d662CB1787716D4804A6164Efc135FfB6";
+
+const GAS_BACK_MAINNET = "0x5d84B43d662CB1787716D4804A6164Efc135FfB6";
+
 const TOKEN_MINTER =
   "0x262c70cb68844873654dc54487b634cb00850c1e13c785cd0d96a2b89b829472";
 const DISTRIBUTOR =
@@ -19,13 +22,21 @@ const SHIELD_STATS = [10, 0, -3, 100];
 const BOOTS_STATS = [0, 5, 5, 100];
 module.exports = buildModule("LockModule", (m) => {
   const deployer = m.getAccount(0);
-  console.log("deployer", deployer);
 
   const latch = m.contract("Latch", []);
   const tokenMarket = m.contract("TokenMarket", [latch]);
 
-  const teamVault = m.contract("TeamVault", [GAS_BACK, latch, deployer]);
-  const items = m.contract("Items", [GAS_BACK, latch, deployer, teamVault]);
+  const teamVault = m.contract("TeamVault", [
+    GAS_BACK_MAINNET,
+    latch,
+    deployer,
+  ]);
+  const items = m.contract("Items", [
+    GAS_BACK_MAINNET,
+    latch,
+    deployer,
+    teamVault,
+  ]);
 
   const bridgeVault = m.contract("BridgeVault", []);
   const bridge = m.contract("Bridge", [bridgeVault]);
@@ -40,7 +51,7 @@ module.exports = buildModule("LockModule", (m) => {
   m.call(bridgeVault, "grantRole", [MANAGER, bridge]);
   m.call(pvpVault, "grantRole", [DISTRIBUTOR, pvp]);
   m.call(raidVault, "grantRole", [DISTRIBUTOR, raid]);
-  m.call(items, "registerForGasback", []);
+  // m.call(items, "registerForGasback", []);
 
   m.call(items, "setBaseURI", [
     "https://rose-cheap-jaguar-233.mypinata.cloud/ipfs/bafybeihu5p24wubukadze54afr4t44bxdw2tqk6th4f5he7jkxvdqye6wy/",

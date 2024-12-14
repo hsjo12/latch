@@ -35,8 +35,13 @@ module.exports = {
       chainId: 360,
       accounts: [process.env.PK],
     },
-  },
 
+    shape_sep: {
+      url: `https://shape-sepolia.g.alchemy.com/v2/${process.env.KEY}`,
+      chainId: 11011,
+      accounts: [process.env.PK],
+    },
+  },
   mocha: {
     timeout: 10000000000000,
   },
