@@ -9,6 +9,7 @@ export default class CommonScene extends Phaser.Scene {
     this.otherPlayers = {}
     this.level = new Level()
     this.spike = null
+    this.lastEmitTime = 0
   }
 
   preload() {
@@ -276,7 +277,7 @@ export default class CommonScene extends Phaser.Scene {
     this.otherPlayers[playerInfo.playerId] = otherPlayer
     console.log('Added other player:', playerInfo)
   }
-  update() {
+  update(time, delta) {
     const speed = 80
     const prevVelocity = this.player.body.velocity.clone()
     let newX = this.player.x
@@ -308,6 +309,13 @@ export default class CommonScene extends Phaser.Scene {
 
     // Normalize and scale the velocity so that player can't move faster along a diagonal
     this.player.body.velocity.normalize().scale(speed)
+
+    // Emit the player's new position to the server at regular intervals
+    if (time - this.lastEmitTime > 5) {
+      // Emit every 50ms
+      this.socket.emit('movePlayer', { x: this.player.x, y: this.player.y })
+      this.lastEmitTime = time
+    }
 
     // If no movement keys are pressed, stop the animation
     if (
