@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.27;
+pragma solidity =0.8.28;
 
-interface IGameToken {
+interface ILatch {
     function mint(
         address _receiver, 
         uint256 _amount

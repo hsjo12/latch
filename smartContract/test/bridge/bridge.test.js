@@ -9,10 +9,6 @@ const {
 } = require("@nomicfoundation/hardhat-toolbox/network-helpers");
 const { ethers } = require("hardhat");
 const { expect } = require("chai");
-const {
-  generateRandomItemTypesArray,
-  generateRandomStatsArray,
-} = require("../utils/utils");
 
 const sortList = (list) => {
   list = Array.from(list);
@@ -33,14 +29,10 @@ const nftId_2 = 2;
 
 const setUp = async () => {
   const [deployer, user1, user2, user3] = await ethers.getSigners();
-  const GameToken = await ethers.getContractFactory("GameToken");
-  const gameToken = await GameToken.deploy();
+  const Latch = await ethers.getContractFactory("Latch");
+  const latch = await Latch.deploy();
   const TeamVault = await ethers.getContractFactory("TeamVault");
-  const teamVault = await TeamVault.deploy(
-    GAS_BACK,
-    gameToken.target,
-    deployer
-  );
+  const teamVault = await TeamVault.deploy(GAS_BACK, latch.target, deployer);
 
   const BridgeVault = await ethers.getContractFactory("BridgeVault");
   const bridgeVault = await BridgeVault.deploy();
@@ -53,7 +45,7 @@ const setUp = async () => {
   const Items = await ethers.getContractFactory("Items");
   const items = await Items.deploy(
     GAS_BACK,
-    gameToken.target,
+    latch.target,
     deployer.address,
     teamVault.target
   );
@@ -68,8 +60,8 @@ const setUp = async () => {
   const KEY_NFT_IDS = [51, 52, 53];
   await items.registerForGasback();
 
-  // To mint GameToken
-  await gameToken.grantRole(TOKEN_MINTER, deployer.address);
+  // To mint latch
+  await latch.grantRole(TOKEN_MINTER, deployer.address);
 
   // To transfer key nfts
   await user1.sendTransaction({
@@ -90,8 +82,8 @@ const setUp = async () => {
 
   await Promise.all(
     [user1, user2, user3].map(async (v, i) => {
-      await gameToken.mint(v.address, ethers.parseEther("100000"));
-      await gameToken.connect(v).approve(items.target, ethers.MaxUint256);
+      await latch.mint(v.address, ethers.parseEther("100000"));
+      await latch.connect(v).approve(items.target, ethers.MaxUint256);
       await items.connect(v).mintItems(nftId_0, quantity);
       await items.connect(v).mintItems(nftId_1, quantity);
       await items.connect(v).mintItems(nftId_2, quantity);

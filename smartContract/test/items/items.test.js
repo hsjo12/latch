@@ -9,40 +9,33 @@ const {
 } = require("@nomicfoundation/hardhat-toolbox/network-helpers");
 const { ethers } = require("hardhat");
 const { expect } = require("chai");
-const {
-  generateRandomItemTypesArray,
-  generateRandomStatsArray,
-} = require("../utils/utils");
+
 const TOKEN_MINTER =
   "0x262c70cb68844873654dc54487b634cb00850c1e13c785cd0d96a2b89b829472";
 const GAS_BACK = "0x5d84B43d662CB1787716D4804A6164Efc135FfB6";
 
 const setUp = async () => {
   const [deployer, user1, user2, user3] = await ethers.getSigners();
-  const GameToken = await ethers.getContractFactory("GameToken");
-  const gameToken = await GameToken.deploy();
+  const Latch = await ethers.getContractFactory("Latch");
+  const latch = await Latch.deploy();
 
   const TeamVault = await ethers.getContractFactory("TeamVault");
-  const teamVault = await TeamVault.deploy(
-    GAS_BACK,
-    gameToken.target,
-    deployer
-  );
+  const teamVault = await TeamVault.deploy(GAS_BACK, latch.target, deployer);
 
   const Items = await ethers.getContractFactory("Items");
   const items = await Items.deploy(
     GAS_BACK,
-    gameToken.target,
+    latch.target,
     deployer.address,
     teamVault.target
   );
 
-  await gameToken.grantRole(TOKEN_MINTER, deployer.address);
+  await latch.grantRole(TOKEN_MINTER, deployer.address);
   await items.registerForGasback();
   await Promise.all(
     [user1, user2, user3].map(async (v) => {
-      await gameToken.connect(v).approve(items.target, ethers.MaxUint256);
-      await gameToken.mint(v.address, ethers.parseEther("1000"));
+      await latch.connect(v).approve(items.target, ethers.MaxUint256);
+      await latch.mint(v.address, ethers.parseEther("1000"));
     })
   );
 
@@ -51,7 +44,7 @@ const setUp = async () => {
     user1,
     user2,
     user3,
-    gameToken,
+    latch,
     items,
     teamVault,
   };
@@ -59,15 +52,15 @@ const setUp = async () => {
 
 describe("Items Test", () => {
   let deployer, user1, user2, user3;
-  let gameToken, items, teamVault;
+  let latch, items, teamVault;
 
   beforeEach(async () => {
-    ({ deployer, user1, user2, user3, gameToken, items, teamVault } =
+    ({ deployer, user1, user2, user3, latch, items, teamVault } =
       await loadFixture(setUp));
   });
 
   it("Check if values in constructor", async () => {
-    expect(await gameToken.target).to.eq(await items.gameToken());
+    expect(await latch.target).to.eq(await items.token());
     expect(await teamVault.target).to.eq(await items.teamVault());
     expect(GAS_BACK).to.eq(await items.gasback());
   });
@@ -91,15 +84,15 @@ describe("Items Test", () => {
     const totalPrice = price * quantity;
     const nftId = 1;
 
-    const tokenBalanceOfTeamVault = await gameToken.balanceOf(teamVault.target);
-    const tokenBalanceOfUser1 = await gameToken.balanceOf(user1.address);
+    const tokenBalanceOfTeamVault = await latch.balanceOf(teamVault.target);
+    const tokenBalanceOfUser1 = await latch.balanceOf(user1.address);
     const itemBalanceOfUser1 = await items.balanceOf(user1.address, nftId);
     await items.connect(user1).mintItems(nftId, quantity);
 
-    expect(await gameToken.balanceOf(user1.address)).to.eq(
+    expect(await latch.balanceOf(user1.address)).to.eq(
       tokenBalanceOfUser1 - totalPrice
     );
-    expect(await gameToken.balanceOf(teamVault.target)).to.eq(
+    expect(await latch.balanceOf(teamVault.target)).to.eq(
       tokenBalanceOfTeamVault + totalPrice
     );
     expect(await items.balanceOf(user1.address, nftId)).to.eq(
@@ -107,7 +100,7 @@ describe("Items Test", () => {
     );
   });
 
-  it("Check if only MANAGER or DEFAULT_ADMIN_ROLE role can execute setPrice, setOwner, setTeamVault, setGameToken and setTokenURIById", async () => {
+  it("Check if only MANAGER or DEFAULT_ADMIN_ROLE role can execute setPrice, setOwner, setTeamVault, setToken and setTokenURIById", async () => {
     //setPrice
     const newPrice = ethers.parseEther("10");
     await items.setPrice(newPrice);
@@ -126,11 +119,11 @@ describe("Items Test", () => {
     expect(newTeamVault).to.eq(await items.teamVault());
     await expect(items.connect(user1).setTeamVault(newTeamVault)).to.reverted;
 
-    //setGameToken
-    const newGameToken = user1.address;
-    await items.setGameToken(newGameToken);
-    expect(newGameToken).to.eq(await items.gameToken());
-    await expect(items.connect(user1).setGameToken(newGameToken)).to.reverted;
+    //setToken
+    const newToken = user1.address;
+    await items.setToken(newToken);
+    expect(newToken).to.eq(await items.token());
+    await expect(items.connect(user1).setToken(newToken)).to.reverted;
 
     //setBaseURI
     const id = 1;

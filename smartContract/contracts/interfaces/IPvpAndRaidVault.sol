@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.27;
-import { IRaidPrize } from "../interfaces/IRaidPrize.sol";
+pragma solidity =0.8.28;
+
+import {IRaidPrize} from "../interfaces/IRaidPrize.sol";
 
 interface IPvpAndRaidVault is IRaidPrize {
     function moveToken(address _receiver, uint256 _amount) external;

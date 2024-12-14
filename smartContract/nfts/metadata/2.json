@@ -1,0 +1,23 @@
+{
+  "name": "Latch - boots",
+  "description": "An item issued in the Latch game, offering unique attributes for players.",
+  "image": "https://rose-cheap-jaguar-233.mypinata.cloud/ipfs/bafybeietqvhddc65atqz5mftfckr6wvbftvjurteldqnernuan4coqvd3q/2.png",
+  "attributes": [
+    {
+      "trait_type": "Atk",
+      "value": "0"
+    },
+    {
+      "trait_type": "Def",
+      "value": "5"
+    },
+    {
+      "trait_type": "Spd",
+      "value": "5"
+    },
+    {
+      "trait_type": "Durability",
+      "value": "100"
+    }
+  ]
+}
