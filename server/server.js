@@ -20,6 +20,9 @@ io.on('connection', (socket) => {
     playerId: socket.id,
     x: 400,
     y: 300,
+    life: 100,
+    attack: 10,
+    weapon: 'sword',
   }
 
   // Send the current players to the new player
@@ -34,6 +37,26 @@ io.on('connection', (socket) => {
       players[socket.id].x = movementData.x
       players[socket.id].y = movementData.y
       io.emit('playerMoved', players[socket.id])
+    }
+  })
+
+  // Handle player attack
+  socket.on('attackPlayer', (targetId) => {
+    if (players[socket.id] && players[targetId]) {
+      players[targetId].life -= players[socket.id].attack
+      // log the both players life
+      console.log('Attacker:', players[socket.id].life)
+      console.log('Target:', players[targetId].life)
+      if (players[targetId].life <= 0) {
+        io.emit('playerDefeated', targetId)
+        delete players[targetId]
+      } else {
+        io.emit('playerAttacked', {
+          attacker: socket.id,
+          target: targetId,
+          life: players[targetId].life,
+        })
+      }
     }
   })
 
