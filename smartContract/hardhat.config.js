@@ -30,11 +30,11 @@ module.exports = {
       },
     },
 
-    // eth: {
-    //   url: "https://eth-mainnet.g.alchemy.com/v2/ciI0Q84GRMOMJgY6ZJc33uUPQG6th-JR",
-    //   chainId: 1,
-    //   accounts: [process.env.PK],
-    // },
+    shape: {
+      url: `https://shape-mainnet.g.alchemy.com/v2/${process.env.KEY}`,
+      chainId: 360,
+      accounts: [process.env.PK],
+    },
   },
 
   mocha: {
