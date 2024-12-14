@@ -228,7 +228,7 @@ contract Bridge is AccessControl {
         return importedItemAddresses[_user].length;
     }
     
-    function verifyIfUserHoldItem(
+    function userHasItem(
         address _user, 
         address _item
     ) 
