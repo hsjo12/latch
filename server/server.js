@@ -38,6 +38,7 @@ io.on('connection', (socket) => {
       players[socket.id].x = movementData.x
       players[socket.id].y = movementData.y
       players[socket.id].animation = movementData.animation
+      players[socket.id].flipxX = movementData.flipX
       io.emit('playerMoved', players[socket.id])
     }
   })
