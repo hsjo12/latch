@@ -114,6 +114,9 @@ export default class CommonScene extends Phaser.Scene {
       .setScale(1)
 
     this.player.setCollideWorldBounds(true)
+    this.player.life = 100
+    this.player.attack = 10
+    this.player.weapon = 'sword'
     this.player.setScale(1) // Scale the player sprite by 1.5 times
     this.player.setBodySize(24, 28)
     this.player.setOffset(10, 13)
@@ -203,6 +206,11 @@ export default class CommonScene extends Phaser.Scene {
     })
     this.player.play('idleDown')
     this.handleSocketEvents()
+
+    // Add a attack kek
+    this.attackKey = this.input.keyboard.addKey(
+      Phaser.Input.Keyboard.KeyCodes.SPACE
+    )
   }
 
   handleSocketEvents() {
@@ -232,6 +240,21 @@ export default class CommonScene extends Phaser.Scene {
       }
     })
 
+    socket.on('playerAttacked', (data) => {
+      if (this.otherPlayers[data.target]) {
+        this.otherPlayers[data.target].life = data.life
+        console.log('Player attacked:', data)
+      }
+    })
+
+    socket.on('playerDefeated', (playerId) => {
+      if (this.otherPlayers[playerId]) {
+        this.otherPlayers[playerId].destroy()
+        delete this.otherPlayers[playerId]
+        console.log('Player defeated:', playerId)
+      }
+    })
+
     socket.on('playerDisconnected', (playerId) => {
       if (this.otherPlayers[playerId]) {
         this.otherPlayers[playerId].destroy()
@@ -247,6 +270,9 @@ export default class CommonScene extends Phaser.Scene {
       'player'
     )
     otherPlayer.playerId = playerInfo.playerId
+    otherPlayer.life = playerInfo.life
+    otherPlayer.attack = playerInfo.attack
+    otherPlayer.weapon = playerInfo.weapon
     this.otherPlayers[playerInfo.playerId] = otherPlayer
     console.log('Added other player:', playerInfo)
   }
@@ -306,6 +332,35 @@ export default class CommonScene extends Phaser.Scene {
       } else if (prevVelocity.y > 0) {
         this.player.anims.play('idleDown', true)
       }
+    }
+    if (Phaser.Input.Keyboard.JustDown(this.attackKey)) {
+      this.handleAttack()
+    }
+  }
+
+  handleAttack() {
+    // Find the closest player to attack
+    let closestPlayer = null
+    let closestDistance = Infinity
+
+    Object.keys(this.otherPlayers).forEach((id) => {
+      const otherPlayer = this.otherPlayers[id]
+      const distance = Phaser.Math.Distance.Between(
+        this.player.x,
+        this.player.y,
+        otherPlayer.x,
+        otherPlayer.y
+      )
+      if (distance < closestDistance) {
+        closestDistance = distance
+        closestPlayer = otherPlayer
+      }
+    })
+
+    if (closestPlayer && closestDistance < 50) {
+      // Adjust attack range as needed
+      this.socket.emit('attackPlayer', closestPlayer.playerId)
+      console.log('Attacking player:', closestPlayer.playerId)
     }
   }
 }
