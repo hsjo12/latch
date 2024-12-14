@@ -23,6 +23,7 @@ io.on('connection', (socket) => {
     life: 100,
     attack: 10,
     weapon: 'sword',
+    animation: 'idleDown'
   }
 
   // Send the current players to the new player
@@ -36,6 +37,7 @@ io.on('connection', (socket) => {
     if (players[socket.id]) {
       players[socket.id].x = movementData.x
       players[socket.id].y = movementData.y
+      players[socket.id].animation = movementData.animation
       io.emit('playerMoved', players[socket.id])
     }
   })
