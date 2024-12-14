@@ -11,7 +11,6 @@ module.exports = {
         xs: "475px",
       },
       colors: {
-        "main-color": "#168cff",
         "highlight-color": "#eba000",
       },
       fontFamily: {

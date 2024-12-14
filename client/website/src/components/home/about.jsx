@@ -23,7 +23,7 @@ export default function About() {
             <Image
               priority
               src="/images/about.gif"
-              alt="AmonBaby Image"
+              alt="Image"
               className="w-full !object-contain"
               fill
               sizes="100%"

@@ -11,6 +11,24 @@
   @apply rounded-md tracking-[0.2rem] pl-6 pr-6 font-bebas_neue;
 }
 
+.exportBtn {
+  color: whitesmoke;
+  transition: all 0.2s ease-out;
+  border: 2px solid transparent;
+  background-color: #993131;
+  box-shadow: 4px 4px 10px #000000;
+  @apply rounded-md tracking-[0.2rem] pl-6 pr-6 font-bebas_neue;
+}
+
+.importBtn {
+  color: whitesmoke;
+  transition: all 0.2s ease-out;
+  border: 2px solid transparent;
+  background-color: #157003;
+  box-shadow: 4px 4px 10px #000000;
+  @apply rounded-md tracking-[0.2rem] pl-6 pr-6 font-bebas_neue;
+}
+
 .linkBtn {
   background-color: #252525da;
   color: whitesmoke;
@@ -32,12 +50,15 @@
   @apply rounded-xl;
 }
 @media (hover: hover) {
-  .btn:hover {
+  .btn:hover,
+  .exportBtn:hover,
+  .importBtn:hover {
     background-color: transparent;
     text-shadow: 0px 0px 20px rgb(255, 255, 255);
     box-shadow: 0px 0px 10px #ffffff;
     @apply text-highlight-color;
   }
+
   .linkBtn:hover {
     background-color: transparent;
     text-shadow: 0px 0px 20px rgb(255, 255, 255);

@@ -3,6 +3,7 @@ import { ContextAPI } from "../../../utils/contextAPI/latchContextAPI";
 import { IoMdMenu } from "react-icons/io";
 import Link from "next/link";
 import Menu from "./menu";
+import { usePathname } from "next/navigation";
 
 export default function Header() {
   const {
@@ -17,6 +18,7 @@ export default function Header() {
     setHeaderHeight,
   } = useContext(ContextAPI);
 
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const scrollToSection = (section) => {
     if (sectionRefs.current[section]) {
@@ -29,6 +31,7 @@ export default function Header() {
   };
 
   const handleScroll = useCallback(() => {
+    if (pathname !== "/") return;
     const sectionPositions = Object.keys(sectionRefs.current).map((section) => {
       return {
         section,
@@ -103,41 +106,66 @@ export default function Header() {
           <h1 className="logo textBtn">
             <Link href="/">Latch</Link>
           </h1>
-
-          <div className="font-bebas_neue flex gap-2 justify-center items-center menuText">
-            <button className="textBtn" onClick={() => scrollToSection("home")}>
-              Home
-            </button>
-            <button
-              className="textBtn"
-              onClick={() => scrollToSection("about")}
-            >
-              About
-            </button>
-            <button
-              className="textBtn"
-              onClick={() => scrollToSection("guide")}
-            >
-              Guide
-            </button>
-            <button
-              className="textBtn"
-              onClick={() => scrollToSection("roadmap")}
-            >
-              Roadmap
-            </button>
-            <Link href="/marketplace">
-              <button className="textBtn">Marketplace</button>
-            </Link>
-            <button className="textBtn">play</button>
-            <button className="appBtn">Connect</button>
-          </div>
+          {pathname === "/" ? (
+            <div className="font-bebas_neue flex gap-2 justify-center items-center menuText">
+              <button
+                className="textBtn"
+                onClick={() => scrollToSection("home")}
+              >
+                Home
+              </button>
+              <button
+                className="textBtn"
+                onClick={() => scrollToSection("about")}
+              >
+                About
+              </button>
+              <button
+                className="textBtn"
+                onClick={() => scrollToSection("guide")}
+              >
+                Guide
+              </button>
+              <button
+                className="textBtn"
+                onClick={() => scrollToSection("roadmap")}
+              >
+                Roadmap
+              </button>
+              <Link href="/marketplace">
+                <button className="textBtn">Marketplace</button>
+              </Link>
+              <button className="textBtn">Game</button>
+              <button className="appBtn">Connect</button>
+            </div>
+          ) : (
+            <div className="font-bebas_neue flex gap-2 justify-center items-center menuText">
+              <Link href="/">
+                <button className="textBtn">Home</button>
+              </Link>
+              <Link href="/">
+                <button className="textBtn">About</button>
+              </Link>
+              <Link href="/">
+                <button className="textBtn">Guide</button>
+              </Link>
+              <Link href="/">
+                <button className="textBtn">Roadmap</button>
+              </Link>
+              <Link href="/marketplace">
+                <button className="textBtn">Marketplace</button>
+              </Link>
+              <button className="textBtn">Game</button>
+              <button className="appBtn">Connect</button>
+            </div>
+          )}
         </div>
       </nav>
     );
   } else {
     return (
       <nav
+        ref={headerRef}
         className={`w-full fixed top-0 left-0 flex z-50 pt-1 pb-1 ${
           isNavOn ? "bg-[#303030]" : ""
         }`}

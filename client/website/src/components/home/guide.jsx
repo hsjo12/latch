@@ -11,7 +11,7 @@ export default function Guide() {
       description:
         "Before entering the game, consider purchasing $Lat tokens. These tokens are used for minting NFT items and participating in battles. Items play a crucial role in determining the outcome of battles, as each item comes with unique stats that enhance your character's abilities.",
       linkName: "Buy $Lat and Items",
-      link: "/",
+      link: "/marketplace",
       animation: "toLeft",
     },
     {
@@ -19,7 +19,7 @@ export default function Guide() {
       description:
         "To use your items in Latch, you need to transfer them to the Latch bridge contract. This step ensures your items are ready for use in the game world.",
       linkName: "Transfer Items",
-      link: "/",
+      link: "/marketplace",
       animation: "toRight",
     },
     {
@@ -27,11 +27,11 @@ export default function Guide() {
       description:
         "Even if you skip Steps 1 and 2, you can still enter the Latch world and participate in battles. However, having items and $Lat tokens may give you an advantage.",
       linkName: "Enter",
-      link: "/",
+      link: "/game",
       animation: "toLeft",
     },
     {
-      title: "Step 4: toRight",
+      title: "Step 4: Battle",
       description:
         "To challenge an opponent, head to the Battle Zone in the game. You'll need to stake $Lat tokens to join the fight. In battles, you have full control of your character's movements, attacks, and strategies. Skillful control can outweigh item stats, making quick reflexes and smart decisions key to victory.",
       linkName: undefined,

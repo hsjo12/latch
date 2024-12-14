@@ -1,11 +1,8 @@
 import Link from "next/link";
-import { FaXTwitter } from "react-icons/fa6";
-import { FaTelegramPlane } from "react-icons/fa";
-import { FaTiktok } from "react-icons/fa";
-import { FaInstagram } from "react-icons/fa";
 import { IoMdClose } from "react-icons/io";
-
+import { usePathname } from "next/navigation";
 export default function Menu({ setOpen, currentPosition, scrollToSection }) {
+  const pathname = usePathname();
   return (
     <div className="fixed top-0 right-0 w-screen h-screen z-30 bg-[#0000008a] ">
       <div className="absolute top-0 right-0 w-[30vh] h-screen flex flex-col items-center justify-center bg-[#141414] toLeft">
@@ -16,20 +13,34 @@ export default function Menu({ setOpen, currentPosition, scrollToSection }) {
           <IoMdClose />
         </button>
         <div className="flex flex-col justify-center items-center gap-3 font-bebas_neue">
-          {["home", "about", "guide", "roadmap"].map((section) => (
-            <button
-              key={section}
-              className={`textBtn ${
-                currentPosition === section ? "text-highlight-color" : ""
-              }`}
-              onClick={() => {
-                scrollToSection(section);
-                return setOpen(false);
-              }}
-            >
-              {section.charAt(0).toUpperCase() + section.slice(1)}
-            </button>
-          ))}
+          {["home", "about", "guide", "roadmap"].map((section) =>
+            pathname === "/" ? (
+              <button
+                key={section}
+                className={`textBtn ${
+                  currentPosition === section ? "text-highlight-color" : ""
+                }`}
+                onClick={() => {
+                  scrollToSection(section);
+                  return setOpen(false);
+                }}
+              >
+                {section.charAt(0).toUpperCase() + section.slice(1)}
+              </button>
+            ) : (
+              <>
+                <Link href="/">
+                  <button
+                    className={`textBtn ${
+                      currentPosition === section ? "text-highlight-color" : ""
+                    }`}
+                  >
+                    {section.charAt(0).toUpperCase() + section.slice(1)}
+                  </button>
+                </Link>
+              </>
+            )
+          )}
 
           <Link href="/marketplace">
             <button className="textBtn">Marketplace</button>
