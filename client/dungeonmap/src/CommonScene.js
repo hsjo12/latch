@@ -187,14 +187,14 @@ export default class CommonScene extends Phaser.Scene {
 
     this.anims.create({
       key: 'attackRight',
-      frames: this.anims.generateFrameNumbers('player', { start: 42, end: 45 }),
+      frames: this.anims.generateFrameNumbers('player', { start: 42, end: 46 }),
       frameRate: 10,
       repeat: -1,
     })
 
     this.anims.create({
       key: 'attackUp',
-      frames: this.anims.generateFrameNumbers('player', { start: 48, end: 51 }),
+      frames: this.anims.generateFrameNumbers('player', { start: 48, end: 52 }),
       frameRate: 10,
       repeat: -1,
     })
