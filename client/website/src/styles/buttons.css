@@ -41,6 +41,7 @@
 .textBtn {
   transition: all 0.2s ease-out;
 }
+
 .appBtn {
   background-color: #993131;
   padding-right: 0.25rem;
@@ -49,6 +50,13 @@
   transition: transform 0.1s, box-shadow 0.1s;
   @apply rounded-xl;
 }
+
+.swapArrowBtn {
+  transition: all 0.2s ease-out;
+  border-radius: 100%;
+  background-color: transparent;
+}
+
 @media (hover: hover) {
   .btn:hover,
   .exportBtn:hover,
@@ -65,8 +73,15 @@
     box-shadow: 0px 0px 10px #ffffff;
     @apply text-highlight-color;
   }
+
   .textBtn:hover {
     text-shadow: 2px 2px 7px rgba(255, 255, 255, 0.781);
+    @apply text-highlight-color;
+  }
+
+  .swapArrowBtn:hover {
+    text-shadow: 0px 0px 20px rgb(255, 255, 255);
+    box-shadow: 0px 0px 10px #ffffff;
     @apply text-highlight-color;
   }
 

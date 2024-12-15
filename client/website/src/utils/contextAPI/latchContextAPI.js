@@ -15,9 +15,6 @@ export function LatchContextAPI({ children }) {
   const [animationOnBySection, setAnimationOnBySection] = useState({});
   const [update, setUpdate] = useState(null);
   const [loadingScreenOn, setLoadingScreenOn] = useState(false);
-  const [loadingScreenText, setLoadingScreenText] = useState(
-    "Please hold on for a moment."
-  );
 
   return (
     <ContextAPI.Provider
@@ -37,8 +34,6 @@ export function LatchContextAPI({ children }) {
         setAnimationOnBySection,
         loadingScreenOn,
         setLoadingScreenOn,
-        loadingScreenText,
-        setLoadingScreenText,
       }}
     >
       {children}

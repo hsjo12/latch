@@ -58,7 +58,13 @@ export default function RootLayout({ children }) {
       >
         <Web3Modal>
           <LatchContextAPI>
-            <ToastContainer />
+            <ToastContainer
+              theme="dark"
+              style={{
+                zIndex: 9999,
+                fontSize: "17px",
+              }}
+            />
             <Layout>{children}</Layout>
           </LatchContextAPI>
         </Web3Modal>

@@ -19,7 +19,7 @@ export default function Header() {
   } = useContext(ContextAPI);
 
   const pathname = usePathname();
-  const { open, close } = useAppKit();
+  const { open } = useAppKit();
   const { address, isConnected } = useAppKitAccount();
   const [menuOn, setMenuOn] = useState(false);
 
@@ -37,6 +37,7 @@ export default function Header() {
   );
 
   const handleScroll = useCallback(() => {
+    setIsNavOn(window.scrollY > 100);
     if (pathname !== "/") return;
 
     const sectionPositions = Object.entries(sectionRefs.current).map(
@@ -61,8 +62,6 @@ export default function Header() {
         [newSection]: true,
       }));
     }
-
-    setIsNavOn(window.scrollY > 100);
   }, [
     pathname,
     currentPosition,
@@ -104,7 +103,9 @@ export default function Header() {
         <Link href="/marketplace">
           <button className="textBtn">Marketplace</button>
         </Link>
-        <button className="textBtn">Game</button>
+        <Link href="/game">
+          <button className="textBtn">Game</button>
+        </Link>
         {isConnected ? (
           <button className="appBtn" onClick={() => open()}>
             {`${address && address.slice(0, 6)}...${
