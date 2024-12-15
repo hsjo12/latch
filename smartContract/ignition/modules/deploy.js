@@ -17,8 +17,8 @@ const SWORD_ID = 0;
 const SHIELD_ID = 1;
 const BOOTS_ID = 2;
 
-const SWORD_STATS = [10, 0, -3, 100];
-const SHIELD_STATS = [10, 0, -3, 100];
+const SWORD_STATS = [10, 0, -2, 100];
+const SHIELD_STATS = [0, 12, -3, 100];
 const BOOTS_STATS = [0, 5, 5, 100];
 
 const PRICE_LIST = [

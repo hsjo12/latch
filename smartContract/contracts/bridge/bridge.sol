@@ -74,7 +74,6 @@ contract Bridge is AccessControl {
         } else if (_findItemType(_item) == ItemType.ERC1155) {
             if (isItemImported[msg.sender][_item][_tokenId]) revert MultipleItemsNotAllowed();
             IERC1155(_item).safeTransferFrom(msg.sender, address(bridgeVault), _tokenId, 1, "");
-            isItemImported[msg.sender][_item][_tokenId] = true;
         } else {
             revert InvalidItemType();
         }
@@ -87,6 +86,7 @@ contract Bridge is AccessControl {
         }
 
         tokenIndex[msg.sender][_item][_tokenId] = items.length;
+        isItemImported[msg.sender][_item][_tokenId] = true;
         items.push(_tokenId);
         emit Import(msg.sender, _item, _tokenId);
     }
@@ -156,11 +156,10 @@ contract Bridge is AccessControl {
             bridgeVault.moveERC721Item(msg.sender, _item, _tokenId);
         }else if(_findItemType(_item) == ItemType.ERC1155) {
             bridgeVault.moveERC1155Item(msg.sender, _item, _tokenId);
-            isItemImported[msg.sender][_item][_tokenId] = false;
         }else{
             revert InvalidItemType();
         }
-        
+        isItemImported[msg.sender][_item][_tokenId] = false;
         emit Export(msg.sender, _item, _tokenId);
     }
 
