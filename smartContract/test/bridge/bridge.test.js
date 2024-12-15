@@ -27,6 +27,15 @@ const nftId_0 = 0;
 const nftId_1 = 1;
 const nftId_2 = 2;
 
+const PRICE_LIST = [
+  ethers.parseEther("1"),
+  ethers.parseEther("1"),
+  ethers.parseEther("1"),
+];
+const SWORD_STATS = [10, 10, 0, 100];
+const SHIELD_STATS = [0, 100, 0, 100];
+const BOOTS_STATS = [0, 0, 100, 100];
+
 const setUp = async () => {
   const [deployer, user1, user2, user3] = await ethers.getSigners();
   const Latch = await ethers.getContractFactory("Latch");
@@ -59,6 +68,11 @@ const setUp = async () => {
   );
   const KEY_NFT_IDS = [51, 52, 53];
   await items.registerForGasback();
+  await items.initializeItems([nftId_0, nftId_1, nftId_2], PRICE_LIST, [
+    SWORD_STATS,
+    SHIELD_STATS,
+    BOOTS_STATS,
+  ]);
 
   // To mint latch
   await latch.grantRole(TOKEN_MINTER, deployer.address);
@@ -319,7 +333,7 @@ describe("Items Test", () => {
     ).to.deep.eq([]);
   });
 
-  it.only("Check if revert statements works", async () => {
+  it("Check if revert statements works", async () => {
     await expect(
       bridge.connect(user1).importItem(user2.address, nftId_1)
     ).to.revertedWithCustomError(bridge, "InvalidItemType");

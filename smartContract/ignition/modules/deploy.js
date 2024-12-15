@@ -20,6 +20,12 @@ const BOOTS_ID = 2;
 const SWORD_STATS = [10, 0, -3, 100];
 const SHIELD_STATS = [10, 0, -3, 100];
 const BOOTS_STATS = [0, 5, 5, 100];
+
+const PRICE_LIST = [
+  ethers.parseEther("300"),
+  ethers.parseEther("500"),
+  ethers.parseEther("700"),
+];
 module.exports = buildModule("LockModule", (m) => {
   const deployer = m.getAccount(0);
 
@@ -51,13 +57,15 @@ module.exports = buildModule("LockModule", (m) => {
   m.call(bridgeVault, "grantRole", [MANAGER, bridge]);
   m.call(pvpVault, "grantRole", [DISTRIBUTOR, pvp]);
   m.call(raidVault, "grantRole", [DISTRIBUTOR, raid]);
-  // m.call(items, "registerForGasback", []);
+
+  m.call(items, "registerForGasback", []);
 
   m.call(items, "setBaseURI", [
     "https://rose-cheap-jaguar-233.mypinata.cloud/ipfs/bafybeihu5p24wubukadze54afr4t44bxdw2tqk6th4f5he7jkxvdqye6wy/",
   ]);
-  m.call(items, "setItemStats", [
+  m.call(items, "initializeItems", [
     [SWORD_ID, SHIELD_ID, BOOTS_ID],
+    PRICE_LIST,
     [SWORD_STATS, SHIELD_STATS, BOOTS_STATS],
   ]);
 });

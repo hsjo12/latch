@@ -3,7 +3,7 @@ const { ethers } = require("hardhat");
 const LATCH_ADDRESS = "";
 const TOKEN_MARKET_ADDRESS = "";
 const ITEMS_ADDRESS = "";
-const TOKEN_AMOUNT = ethers.parseEther("1000");
+const TOKEN_AMOUNT = ethers.parseEther("10000");
 const NFT_ID = 0;
 const QUANTITY = 10;
 
