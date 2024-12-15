@@ -16,6 +16,7 @@ const DISTRIBUTOR =
   "0x85faced7bde13e1a7dad704b895f006e704f207617d68166b31ba2d79624862d";
 const TOKEN_MINTER =
   "0x262c70cb68844873654dc54487b634cb00850c1e13c785cd0d96a2b89b829472";
+
 const setUp = async () => {
   const [deployer, user1, user2, user3, tokenMinter] =
     await ethers.getSigners();

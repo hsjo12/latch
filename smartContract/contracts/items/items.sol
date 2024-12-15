@@ -10,24 +10,36 @@ import {IGasback} from "../interfaces/IGasback.sol";
 
 contract Items is  ERC1155, AccessControl {
 
+    // constant
     bytes32 constant TOKEN_MINTER = 0x262c70cb68844873654dc54487b634cb00850c1e13c785cd0d96a2b89b829472;
     bytes32 constant MANAGER = 0xaf290d8680820aad922855f39b306097b20e28774d6c1ad35a20325630c3a02c;
 
+    // immutable
     IGasback public immutable gasback;
     
+    // error
+    error UnregisteredItem();
+
+    // event
     event MintRequested(address indexed user, uint256 quantity);
     event ItemMinted(address indexed user, uint256 quantity);
 
+    // struct
     struct Stats {
         uint64 atk; 
         uint64 def;
-        int64 speed;
-        uint64 durability;
+        int64 spd;
+        uint64 dur;
     }
 
-    mapping(uint256 => string) public tokenURIByItemType;
-    mapping(uint256 => Stats) public itemInfo;
-    uint256 public price = 1 ether;
+    struct Item {
+        Stats stats;
+        uint256 price;
+        bool registered;
+    }
+    
+    // variable
+    mapping(uint256 => Item) public itemInfo;
     address public teamVault;
     address public owner;
     IERC20 public token;
@@ -55,31 +67,63 @@ contract Items is  ERC1155, AccessControl {
     }
     
     function mintItems(uint256 _id, uint256 _quantity) external {
-        token.transferFrom(msg.sender, teamVault, _quantity * price);
+        Item storage item = itemInfo[_id];
+
+       if(!item.registered) revert UnregisteredItem();
+
+        token.transferFrom(msg.sender, teamVault, _quantity * item.price);
         _mint(msg.sender, _id, _quantity, ""); 
     }
 
-    function setItemStats(
+    function initializeItems(
+        uint256[] calldata _idList, 
+        uint256[] calldata _priceList,
+        Stats[] calldata _statsList
+    ) 
+        external 
+        onlyRole(MANAGER) 
+    {
+        Item storage item;
+        uint256 size = _idList.length;
+        for(uint256 i; i < size; i++) {
+            item = itemInfo[_idList[i]];
+            item.stats = _statsList[i];
+            item.price = _priceList[i];
+            item.registered = true;
+        }
+        
+    }
+
+    function setPrices(
+        uint256[] calldata _idList, 
+        uint256[] calldata _priceList
+    ) 
+        external 
+        onlyRole(MANAGER) 
+    {
+        Item storage item;
+        uint256 size = _idList.length;
+        for(uint256 i; i < size; i++) {
+            item = itemInfo[_idList[i]];
+            if(!item.registered) revert UnregisteredItem();
+            item.price = _priceList[i];
+        }
+    }
+
+    function setStats(
         uint256[] calldata _idList, 
         Stats[] calldata _statsList
     ) 
         external 
         onlyRole(MANAGER) 
     {
+        Item storage item;
         uint256 size = _idList.length;
         for(uint256 i; i < size; i++) {
-            itemInfo[_idList[i]] = _statsList[i];
+            item = itemInfo[_idList[i]];
+            if(!item.registered) revert UnregisteredItem();
+            item.stats = _statsList[i];
         }
-        
-    }
-
-    function setPrice(
-        uint256 _price
-    ) 
-        external 
-        onlyRole(MANAGER) 
-    {
-        price = _price;
     }
 
     function setOwner(
@@ -119,17 +163,45 @@ contract Items is  ERC1155, AccessControl {
             : "";
     }
 
-    function getItemInfoList(
-        uint256[] calldata _id
+    function getPriceList(
+        uint256[] calldata _idList
     ) 
         external 
         view 
-        returns (Stats[] memory _itemInfoList) 
+        returns (uint256[] memory _priceList) 
     {
-        uint256 size = _id.length;
-        _itemInfoList = new Stats[](size);
+        uint256 size = _idList.length;
+        _priceList = new uint256[](size);
         for (uint256 i; i < size; i++) {
-            _itemInfoList[i] = itemInfo[_id[i]];
+            _priceList[i] = itemInfo[_idList[i]].price;
+        }
+    }
+
+    function getStatList(
+        uint256[] calldata _idList
+    ) 
+        external 
+        view 
+        returns (Stats[] memory _statList) 
+    {
+        uint256 size = _idList.length;
+        _statList = new Stats[](size);
+        for (uint256 i; i < size; i++) {
+            _statList[i] = itemInfo[_idList[i]].stats;
+        }
+    }
+
+    function getItemInfoList(
+        uint256[] calldata _idList
+    ) 
+        external 
+        view 
+        returns (Item[] memory _itemInfoList) 
+    {
+        uint256 size = _idList.length;
+        _itemInfoList = new Item[](size);
+        for (uint256 i; i < size; i++) {
+            _itemInfoList[i] = itemInfo[_idList[i]];
         }
     }
 

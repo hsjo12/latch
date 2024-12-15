@@ -4,10 +4,6 @@ const ITEMS_ADDRESS = "";
 const BRIDGE_ADDRESS = "";
 const IMPORTED_NFT_ID = 0;
 
-const getRequiredETH = (pricePerTokenInETH, tokenAmount) => {
-  return (pricePerTokenInETH * tokenAmount) / ethers.parseEther("1");
-};
-
 async function main() {
   const [deployer] = await ethers.getSigners();
 

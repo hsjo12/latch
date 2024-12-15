@@ -17,6 +17,21 @@ const DISTRIBUTOR =
   "0x85faced7bde13e1a7dad704b895f006e704f207617d68166b31ba2d79624862d";
 const TOKEN_MINTER =
   "0x262c70cb68844873654dc54487b634cb00850c1e13c785cd0d96a2b89b829472";
+
+const nftId_0 = 0;
+const nftId_1 = 1;
+const nftId_2 = 2;
+
+const SWORD_STATS = [10, 10, 0, 100];
+const SHIELD_STATS = [0, 100, 0, 100];
+const BOOTS_STATS = [0, 0, 100, 100];
+
+const PRICE_LIST = [
+  ethers.parseEther("1"),
+  ethers.parseEther("1"),
+  ethers.parseEther("1"),
+];
+
 const setUp = async () => {
   const [deployer, user1, user2, user3, tokenMinter] =
     await ethers.getSigners();
@@ -56,6 +71,11 @@ const setUp = async () => {
     })
   );
   await latch.approve(items.target, ethers.MaxUint256);
+  await items.initializeItems([nftId_0, nftId_1, nftId_2], PRICE_LIST, [
+    SWORD_STATS,
+    SHIELD_STATS,
+    BOOTS_STATS,
+  ]);
   await items.mintItems(1, 100);
   await items.setApprovalForAll(raid.target, true);
   return {
