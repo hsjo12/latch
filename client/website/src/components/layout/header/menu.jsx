@@ -1,14 +1,14 @@
 import Link from "next/link";
 import { IoMdClose } from "react-icons/io";
 import { usePathname } from "next/navigation";
-export default function Menu({ setOpen, currentPosition, scrollToSection }) {
+export default function Menu({ setMenuOn, currentPosition, scrollToSection }) {
   const pathname = usePathname();
   return (
     <div className="fixed top-0 right-0 w-screen h-screen z-30 bg-[#0000008a] ">
       <div className="absolute top-0 right-0 w-[30vh] h-screen flex flex-col items-center justify-center bg-[#141414] toLeft">
         <button
           className="absolute top-3 right-6 w-full flex justify-end items-center logo"
-          onClick={() => setOpen(false)}
+          onClick={() => setMenuOn(false)}
         >
           <IoMdClose />
         </button>
@@ -22,7 +22,7 @@ export default function Menu({ setOpen, currentPosition, scrollToSection }) {
                 }`}
                 onClick={() => {
                   scrollToSection(section);
-                  return setOpen(false);
+                  return setMenuOn(false);
                 }}
               >
                 {section.charAt(0).toUpperCase() + section.slice(1)}

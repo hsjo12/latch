@@ -4,7 +4,7 @@ import { IoMdMenu } from "react-icons/io";
 import Link from "next/link";
 import Menu from "./menu";
 import { usePathname } from "next/navigation";
-
+import { useAppKit, useAppKitAccount } from "@reown/appkit/react";
 export default function Header() {
   const {
     isDesktop,
@@ -19,63 +19,52 @@ export default function Header() {
   } = useContext(ContextAPI);
 
   const pathname = usePathname();
-  const [open, setOpen] = useState(false);
-  const scrollToSection = (section) => {
-    if (sectionRefs.current[section]) {
-      setCurrentPosition(section);
-      sectionRefs.current[section].scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-      });
-    }
-  };
+  const { open, close } = useAppKit();
+  const { address, isConnected } = useAppKitAccount();
+  const [menuOn, setMenuOn] = useState(false);
+
+  const scrollToSection = useCallback(
+    (section) => {
+      if (sectionRefs.current[section]) {
+        setCurrentPosition(section);
+        sectionRefs.current[section].scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }
+    },
+    [sectionRefs, setCurrentPosition]
+  );
 
   const handleScroll = useCallback(() => {
     if (pathname !== "/") return;
-    const sectionPositions = Object.keys(sectionRefs.current).map((section) => {
-      return {
+
+    const sectionPositions = Object.entries(sectionRefs.current).map(
+      ([section, ref]) => ({
         section,
-        offsetTop: sectionRefs.current[section].offsetTop,
-        offsetBottom:
-          sectionRefs.current[section].offsetTop +
-          sectionRefs.current[section].offsetHeight,
-      };
-    });
+        offsetTop: ref.offsetTop,
+        offsetBottom: ref.offsetTop + ref.offsetHeight,
+      })
+    );
 
     const viewPort = window.scrollY + window.innerHeight / 2 + 100;
-
-    let newSection = null;
-
-    for (let i = sectionPositions.length - 1; i >= 0; i--) {
-      if (
-        viewPort >= sectionPositions[i].offsetTop &&
-        viewPort < sectionPositions[i].offsetBottom
-      ) {
-        newSection = sectionPositions[i].section;
-        break;
-      }
-    }
+    const newSection = sectionPositions.find(
+      ({ offsetTop, offsetBottom }) =>
+        viewPort >= offsetTop && viewPort < offsetBottom
+    )?.section;
 
     if (newSection && newSection !== currentPosition) {
       setCurrentPosition(newSection);
-
-      // Reset animation for the previous section
-      if (currentPosition && currentPosition !== newSection) {
-        setAnimationOnBySection((prev) => ({
-          ...prev,
-          [currentPosition]: false,
-        }));
-      }
-
-      // Set animation for the new section
       setAnimationOnBySection((prev) => ({
         ...prev,
+        [currentPosition]: false,
         [newSection]: true,
       }));
     }
 
     setIsNavOn(window.scrollY > 100);
   }, [
+    pathname,
     currentPosition,
     sectionRefs,
     setAnimationOnBySection,
@@ -86,109 +75,88 @@ export default function Header() {
   useEffect(() => {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [handleScroll]);
 
   useEffect(() => {
     if (headerRef.current) {
-      setHeaderHeight(headerRef.current.offsetHeight); // Header 높이 계산
+      setHeaderHeight(headerRef.current.offsetHeight);
     }
-  }, []);
+  }, [headerRef, setHeaderHeight]);
 
-  if (isDesktop) {
-    return (
-      <nav
-        ref={headerRef}
-        className={`w-full fixed top-0 left-0 flex z-50 pt-1 pb-1 ${
-          isNavOn ? "bg-[#000000]" : ""
-        }`}
-      >
-        <div className="w-[95vw] mx-auto flex items-center justify-between">
-          <h1 className="logo textBtn">
-            <Link href="/">Latch</Link>
-          </h1>
-          {pathname === "/" ? (
-            <div className="font-bebas_neue flex gap-2 justify-center items-center menuText">
+  const renderMenuButtons = useCallback(
+    () => (
+      <div className="font-bebas_neue flex gap-2 justify-center items-center menuText">
+        {pathname === "/"
+          ? ["home", "about", "guide", "roadmap"].map((section) => (
               <button
+                key={section}
                 className="textBtn"
-                onClick={() => scrollToSection("home")}
+                onClick={() => scrollToSection(section)}
               >
-                Home
+                {section.charAt(0).toUpperCase() + section.slice(1)}
               </button>
-              <button
-                className="textBtn"
-                onClick={() => scrollToSection("about")}
-              >
-                About
-              </button>
-              <button
-                className="textBtn"
-                onClick={() => scrollToSection("guide")}
-              >
-                Guide
-              </button>
-              <button
-                className="textBtn"
-                onClick={() => scrollToSection("roadmap")}
-              >
-                Roadmap
-              </button>
-              <Link href="/marketplace">
-                <button className="textBtn">Marketplace</button>
+            ))
+          : ["Home", "About", "Guide", "Roadmap"].map((text) => (
+              <Link key={text} href="/">
+                <button className="textBtn">{text}</button>
               </Link>
-              <button className="textBtn">Game</button>
-              <button className="appBtn">Connect</button>
-            </div>
-          ) : (
-            <div className="font-bebas_neue flex gap-2 justify-center items-center menuText">
-              <Link href="/">
-                <button className="textBtn">Home</button>
-              </Link>
-              <Link href="/">
-                <button className="textBtn">About</button>
-              </Link>
-              <Link href="/">
-                <button className="textBtn">Guide</button>
-              </Link>
-              <Link href="/">
-                <button className="textBtn">Roadmap</button>
-              </Link>
-              <Link href="/marketplace">
-                <button className="textBtn">Marketplace</button>
-              </Link>
-              <button className="textBtn">Game</button>
-              <button className="appBtn">Connect</button>
-            </div>
-          )}
-        </div>
-      </nav>
-    );
-  } else {
-    return (
-      <nav
-        ref={headerRef}
-        className={`w-full fixed top-0 left-0 flex z-50 pt-1 pb-1 ${
-          isNavOn ? "bg-[#303030]" : ""
-        }`}
-      >
-        {open && (
-          <Menu
-            setOpen={setOpen}
-            currentPosition={currentPosition}
-            scrollToSection={scrollToSection}
-          />
-        )}
-        <div className="w-[95vw] mx-auto flex items-center justify-between">
-          <h1 className="logo textBtn">
-            <Link href="/">Latch</Link>
-          </h1>
-          <button
-            className="w-full flex justify-end items-center logo"
-            onClick={() => setOpen(true)}
-          >
-            <IoMdMenu />
+            ))}
+        <Link href="/marketplace">
+          <button className="textBtn">Marketplace</button>
+        </Link>
+        <button className="textBtn">Game</button>
+        {isConnected ? (
+          <button className="appBtn" onClick={() => open()}>
+            {`${address && address.slice(0, 6)}...${
+              address && address.slice(-4)
+            }`}
           </button>
+        ) : (
+          <button className="appBtn" onClick={() => open()}>
+            Connect
+          </button>
+        )}
+      </div>
+    ),
+    [pathname, scrollToSection, isConnected]
+  );
+
+  return (
+    <nav
+      ref={headerRef}
+      className={`w-full fixed top-0 left-0 flex z-50 pt-1 pb-1 ${
+        isNavOn ? (isDesktop ? "bg-[#000000]" : "bg-[#303030]") : ""
+      }`}
+    >
+      {isDesktop ? (
+        <div className="w-[95vw] mx-auto flex items-center justify-between">
+          <h1 className="logo textBtn">
+            <Link href="/">Latch</Link>
+          </h1>
+          {renderMenuButtons()}
         </div>
-      </nav>
-    );
-  }
+      ) : (
+        <>
+          {menuOn && (
+            <Menu
+              setMenuOn={setMenuOn}
+              currentPosition={currentPosition}
+              scrollToSection={scrollToSection}
+            />
+          )}
+          <div className="w-[95vw] mx-auto flex items-center justify-between">
+            <h1 className="logo textBtn">
+              <Link href="/">Latch</Link>
+            </h1>
+            <button
+              className="w-full flex justify-end items-center logo"
+              onClick={() => setMenuOn(true)}
+            >
+              <IoMdMenu />
+            </button>
+          </div>
+        </>
+      )}
+    </nav>
+  );
 }
