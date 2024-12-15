@@ -291,7 +291,7 @@ export default class CommonScene extends Phaser.Scene {
     // Horizontal movement
     if (this.cursors.left.isDown) {
       this.player.body.setVelocityX(-speed)
-      animation = 'walkLeft'
+      animation = 'walkRight'
       this.player.anims.play('walkRight', true) // Assuming you have a 'walkLeft' animation
       this.player.flipX = true // Flip the sprite to face left
     } else if (this.cursors.right.isDown) {
