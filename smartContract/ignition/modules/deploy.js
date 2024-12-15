@@ -62,7 +62,7 @@ module.exports = buildModule("LockModule", (m) => {
   m.call(pvp, "grantRole", [MANAGER, SERVER_ADDRESS]);
   m.call(raid, "grantRole", [MANAGER, SERVER_ADDRESS]);
 
-  m.call(items, "registerForGasback", []);
+  // m.call(items, "registerForGasback", []);
 
   m.call(items, "setBaseURI", [
     "https://rose-cheap-jaguar-233.mypinata.cloud/ipfs/bafybeihu5p24wubukadze54afr4t44bxdw2tqk6th4f5he7jkxvdqye6wy/",
