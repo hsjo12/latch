@@ -128,14 +128,30 @@ export default class CommonScene extends Phaser.Scene {
       frameRate: 10,
       repeat: -1,
     })
-
+    let element = document.getElementById('input-box');
+    const yesButton = document.getElementById('yes')
+    const noButton = document.getElementById('no')
     this.physics.add.collider(this.player, layer1)
     this.physics.add.collider(this.player, objectLayer, (a, b) => {
       if (b?.properties?.dungeon) {
-        this.scene.start('DungeonScene')
+        element.style.display = 'block'
+        yesButton.addEventListener('click', ()=>{
+          this.scene.start('DungeonScene')
+          element.style.display = 'none'
+        })
+        noButton.addEventListener('click', ()=>{
+          element.style.display = 'none'
+        })
       }
       if (b?.properties?.bridge) {
-        this.scene.start('BridgeScene')
+        element.style.display = 'block'
+        yesButton.addEventListener('click', ()=>{
+          this.scene.start('BridgeScene')
+          element.style.display = 'none'
+        })
+        noButton.addEventListener('click', ()=>{
+          element.style.display = 'none'
+        })
       }
     })
 
