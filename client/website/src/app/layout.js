@@ -44,7 +44,7 @@ export const metadata = {
   title: "Latch",
   description: `Welcome to Latch, a blockchain-based gaming world where strategy and skill meet innovation.`,
   icons: {
-    icon: "/favicon/favicon.ico",
+    icon: "/favicon/favicon.png",
   },
   openGraph: {
     title: "Latch",
