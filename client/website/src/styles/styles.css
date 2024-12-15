@@ -1,0 +1,55 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.mediaContainer {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+}
+
+.imageContainer {
+  img {
+    position: relative !important;
+    object-fit: cover;
+    @apply max-w-[350px] xs:max-w-[400px] sm:max-w-[800px];
+  }
+}
+
+.swapInput {
+  outline: none;
+  @apply flex-grow text-[whitesmoke] pl-2 bg-transparent rounded-xl;
+}
+.swapInput::-webkit-outer-spin-button,
+.swapInput::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.swapInput[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.customizedScrollbar::-webkit-scrollbar {
+  display: block;
+  width: 10px;
+}
+.customizedScrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.customizedScrollbar::-webkit-scrollbar-thumb {
+  background: #1f3881;
+  box-shadow: -1px 1px 3px 0px #3c83f6;
+}
+
+.customizedLotteryScrollbar::-webkit-scrollbar {
+  display: block;
+  width: 10px;
+}
+.customizedLotteryScrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.customizedLotteryScrollbar::-webkit-scrollbar-thumb {
+  background: #9e9e9ebb;
+  box-shadow: -1px 1px 3px 0px whitesmoke;
+}

@@ -1,0 +1,48 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.guideBox {
+  transition: all 0.2s ease-out;
+  background-color: #002e778a;
+  box-shadow: 5px 5px 10px #000000;
+  @apply w-full text-[whitesmoke] rounded-3xl p-4;
+}
+.roadmapBox {
+  transition: all 0.2s ease-out;
+  background-color: #6301018a;
+  box-shadow: 5px 5px 10px #000000;
+  @apply w-full text-[whitesmoke] rounded-3xl p-4 md:pl-8;
+}
+.marketBox {
+  background-color: #1f1c1ce5;
+  box-shadow: 5px 5px 10px #000000;
+  @apply w-full text-[whitesmoke] rounded-lg;
+}
+.marketBoxHead {
+  @apply w-full font-bebas_neue  font-[500]  bg-[#1f3881] text-[whitesmoke] rounded-t-lg p-1 pb-0 tracking-[0.1rem];
+}
+.marketBoxContents {
+  @apply grid grid-cols-2 items-center justify-center border-b-[1px] border-dashed border-[whitesmoke] w-full last:border-none p-1;
+}
+.itemCard {
+  transition: all 0.2s ease-out;
+  background-color: #8d8d8d24;
+  box-shadow: 5px 5px 10px #000000;
+  @apply w-full text-[whitesmoke] rounded-lg;
+}
+
+@media (hover: hover) {
+  .guideBox:hover {
+    background-color: #0026648a;
+    box-shadow: 7px 7px 20px rgb(0, 0, 0);
+  }
+  .roadmapBox:hover {
+    background-color: #4c00008a;
+    box-shadow: 7px 7px 20px rgb(0, 0, 0);
+  }
+  .itemCard:hover {
+    background-color: #3a3a3ae5;
+    box-shadow: 7px 7px 20px rgb(0, 0, 0);
+  }
+}
