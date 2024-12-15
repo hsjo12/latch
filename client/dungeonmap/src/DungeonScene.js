@@ -7,6 +7,7 @@ export default class DungeonScene extends Phaser.Scene {
     this.player = null;
     this.level = new Level();
     this.spike = null;
+    this.healthBar = null;
   }
 
   preload() {
@@ -72,6 +73,8 @@ this.game.scale.resize(256,256)
         )
         .setScale(1);
 
+    this.player.life = 100;
+
     this.player.setScale(1); // Scale the player sprite by 1.5 times
     this.player.setBodySize(24, 28);
     this.player.setOffset(10, 13);
@@ -123,21 +126,21 @@ this.game.scale.resize(256,256)
 
     this.anims.create({
       key: "attackDown",
-      frames: this.anims.generateFrameNumbers("player", { start: 36, end: 41 }),
+      frames: this.anims.generateFrameNumbers("player", { start: 36, end: 39 }),
       frameRate: 10,
       repeat: 1,
     });
 
     this.anims.create({
       key: "attackRight",
-      frames: this.anims.generateFrameNumbers("player", { start: 42, end: 47 }),
+      frames: this.anims.generateFrameNumbers("player", { start: 42, end: 46 }),
       frameRate: 10,
       repeat: -1,
     });
 
     this.anims.create({
       key: "attackUp",
-      frames: this.anims.generateFrameNumbers("player", { start: 48, end: 51 }),
+      frames: this.anims.generateFrameNumbers("player", { start: 48, end: 52 }),
       frameRate: 10,
       repeat: -1,
     });
@@ -149,6 +152,28 @@ this.game.scale.resize(256,256)
       repeat: 0,
     });
     this.player.play("idleDown");
+    this.healthBar = this.createHealthBar(this.player.x, this.player.y, this.player);
+  }
+
+  createHealthBar(x, y, player) {
+    const width = 40;
+    const height = 5;
+    
+    // White outline
+    const outline = this.add.rectangle(x, y - 40, width + 2, height + 2, 0xffffff);
+    
+    // Black background
+    const healthBarBackground = this.add.rectangle(x, y - 40, width, height, 0x000000);
+    
+    // Red health bar - set origin to left
+    const healthBar = this.add.rectangle(x - width/2, y - 40, width, height, 0xff0000)
+        .setOrigin(0, 0.5);
+    
+    return { 
+        outline: outline,
+        background: healthBarBackground, 
+        bar: healthBar 
+    };
   }
 
   update() {
@@ -225,6 +250,34 @@ this.game.scale.resize(256,256)
       }
     }
 
+    // Update health bar position and width
+    if (this.healthBar) {
+        const yOffset = -20;
+        const width = 40;
+        
+        this.healthBar.outline.x = this.player.x;
+        this.healthBar.outline.y = this.player.y + yOffset;
+        this.healthBar.background.x = this.player.x;
+        this.healthBar.background.y = this.player.y + yOffset;
+        
+        // Update red bar position and width
+        this.healthBar.bar.x = this.player.x - width/2;
+        this.healthBar.bar.y = this.player.y + yOffset;
+        this.healthBar.bar.width = (this.player.life / 100) * width;
+    }
+  }
 
+  handleSocketEvents() {
+    // ... keep existing socket events ...
+
+    // Check if this handler exists and has flipX
+    this.socket.on('playerMoved', (playerInfo) => {
+        if (this.otherPlayers[playerInfo.playerId]) {
+            const otherPlayer = this.otherPlayers[playerInfo.playerId];
+            otherPlayer.setPosition(playerInfo.x, playerInfo.y);
+            otherPlayer.anims.play(playerInfo.animation, true);
+            otherPlayer.flipX = playerInfo.flipX;  // Make sure this is here
+        }
+    });
   }
 }
