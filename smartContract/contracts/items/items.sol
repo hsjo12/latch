@@ -26,8 +26,8 @@ contract Items is  ERC1155, AccessControl {
 
     // struct
     struct Stats {
-        uint64 atk; 
-        uint64 def;
+        int64 atk; 
+        int64 def;
         int64 spd;
         uint64 dur;
     }

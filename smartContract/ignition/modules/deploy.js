@@ -13,12 +13,13 @@ const DISTRIBUTOR =
 const MANAGER =
   "0xaf290d8680820aad922855f39b306097b20e28774d6c1ad35a20325630c3a02c";
 
+const SERVER_ADDRESS = "0xdd6F329349626182A9a1Bd7F0B1c3FDf7E8e6131";
 const SWORD_ID = 0;
 const SHIELD_ID = 1;
 const BOOTS_ID = 2;
 
-const SWORD_STATS = [10, 0, -3, 100];
-const SHIELD_STATS = [10, 0, -3, 100];
+const SWORD_STATS = [10, 0, -2, 100];
+const SHIELD_STATS = [0, 12, -3, 100];
 const BOOTS_STATS = [0, 5, 5, 100];
 
 const PRICE_LIST = [
@@ -57,6 +58,9 @@ module.exports = buildModule("LockModule", (m) => {
   m.call(bridgeVault, "grantRole", [MANAGER, bridge]);
   m.call(pvpVault, "grantRole", [DISTRIBUTOR, pvp]);
   m.call(raidVault, "grantRole", [DISTRIBUTOR, raid]);
+
+  m.call(pvp, "grantRole", [MANAGER, SERVER_ADDRESS]);
+  m.call(raid, "grantRole", [MANAGER, SERVER_ADDRESS]);
 
   m.call(items, "registerForGasback", []);
 
