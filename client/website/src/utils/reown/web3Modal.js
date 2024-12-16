@@ -29,17 +29,17 @@ const localNode = defineChain({
 const projectId = process.env.NEXT_PUBLIC_PROJECT_ID;
 
 const metadata = {
-  name: "My Website",
-  description: "My Website description",
-  url: "https://latch.com", // origin must match your domain & subdomain
-  icons: ["https://latch.com/"],
+  name: "latch",
+  description: "latch",
+  url: "https://latch.netlify.app/", // origin must match your domain & subdomain
+  icons: ["https://latch.netlify.app/"],
 };
 
 export const walletModal = createAppKit({
   adapters: [new EthersAdapter()],
   metadata,
-  networks: [localNode],
-  defaultNetwork: localNode,
+  networks: [shape],
+  defaultNetwork: shape,
   projectId,
   allowUnsupportedChain: false,
   enableWalletConnect: true,
