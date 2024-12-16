@@ -10,7 +10,7 @@ Latch is a transparent, blockchain-based gaming platform that allows users to so
 
 - [Node](https://nodejs.org/en/download/)
 - [Git](https://git-scm.com/downloads)
-- [Alchemy] (https://www.alchemy.com/)
+- [Alchemy](https://www.alchemy.com/)
 
 In order to deploy contract you will need:
 
