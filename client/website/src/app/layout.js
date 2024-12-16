@@ -50,7 +50,7 @@ export const metadata = {
     title: "Latch",
     description: `Welcome to Latch, a blockchain-based gaming world where strategy and skill meet innovation.`,
     images: {
-      url: "/ogImage/ogImage.png",
+      url: "https://rose-cheap-jaguar-233.mypinata.cloud/ipfs/bafkreifr6sv4hlw4mh6mmofhnt5wktj7xcbkxrcrpwrhaqrmd67ndjo2ni",
       width: 1200,
       height: 600,
     },

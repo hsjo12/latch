@@ -55,10 +55,10 @@ export default function Header() {
     )?.section;
 
     if (newSection && newSection !== currentPosition) {
+      console.log();
       setCurrentPosition(newSection);
       setAnimationOnBySection((prev) => ({
         ...prev,
-        [currentPosition]: false,
         [newSection]: true,
       }));
     }
