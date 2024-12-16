@@ -1,5 +1,4 @@
 [build]
-  base = "website" 
+  base = "client/website"
   command = "next build"
-  publish = "website/.next"
-
+  publish = "client/website/.next"
