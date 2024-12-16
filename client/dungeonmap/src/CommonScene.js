@@ -364,73 +364,62 @@ export default class CommonScene extends Phaser.Scene {
     // Stop any previous movement from the last frame
     this.player.body.setVelocity(0)
 
-    let animation = 'idleDown'
-    // Horizontal movement
+       
+    // Stop any previous movement
+    this.player.body.setVelocity(0)
+
+    let animation = this.lastDirection ? 'idle' + this.lastDirection : 'idleDown'
+
+    // Handle movement and set last direction
     if (this.cursors.left.isDown) {
-      this.player.body.setVelocityX(-speed)
-      animation = 'walkRight'
-      this.player.anims.play('walkRight', true) // Assuming you have a 'walkLeft' animation
-      this.player.flipX = true // Flip the sprite to face left
+        this.player.body.setVelocityX(-speed)
+        animation = 'walkRight'
+        this.lastDirection = 'Right'
+        this.player.flipX = true
     } else if (this.cursors.right.isDown) {
-      this.player.body.setVelocityX(speed)
-      animation = 'walkRight'
-      this.player.anims.play('walkRight', true)
-      this.player.flipX = false // Ensure the sprite is facing right
+        this.player.body.setVelocityX(speed)
+        animation = 'walkRight'
+        this.lastDirection = 'Right'
+        this.player.flipX = false
     }
 
-    // Vertical movement
     if (this.cursors.up.isDown) {
-      this.player.body.setVelocityY(-speed)
-      animation = 'walkUp'
-      this.player.anims.play('walkUp', true)
+        this.player.body.setVelocityY(-speed)
+        animation = 'walkUp'
+        this.lastDirection = 'Up'
     } else if (this.cursors.down.isDown) {
-      console.log('not')
-      this.player.body.setVelocityY(speed)
-      animation = 'walkDown'
-      this.player.anims.play('walkDown', true)
+        this.player.body.setVelocityY(speed)
+        animation = 'walkDown'
+        this.lastDirection = 'Down'
     }
 
-    // Normalize and scale the velocity so that player can't move faster along a diagonal
+    // Normalize and scale the velocity
     this.player.body.velocity.normalize().scale(speed)
 
-    // Emit the player's new position to the server at regular intervals
-    if (time - this.lastEmitTime > 5) {
-      // Emit every 50ms
-      this.socket.emit('movePlayer', {
-        x: this.player.x,
-        y: this.player.y,
-        animation: animation,
-        flipX: this.player.flipX
-      })
-      this.lastEmitTime = time
+    // Handle idle animations based on last direction
+    if (!this.cursors.left.isDown && 
+        !this.cursors.right.isDown && 
+        !this.cursors.up.isDown && 
+        !this.cursors.down.isDown) {
+        
+        if (this.lastDirection) {
+            animation = 'idle' + this.lastDirection
+        }
     }
 
-    // Play the appropriate animation
-    this.player.anims.play(animation, true)
+    // Play the animation
+    this.player.play(animation, true)
 
-    // If no movement keys are pressed, stop the animation
-    if (
-      this.cursors.left.isUp &&
-      this.cursors.right.isUp &&
-      this.cursors.up.isUp &&
-      this.cursors.down.isUp
-    ) {
-      this.player.anims.stop()
-      // Emit the player's new position to the server
-      this.socket.emit('movePlayer', { x: this.player.x, y: this.player.y,animation: 'idleDown' })
-
-      // Set idle animation based on the last direction
-      if (prevVelocity.x < 0) {
-        this.player.anims.play('idleRight', true)
-        this.player.flipX = true
-      } else if (prevVelocity.x > 0) {
-        this.player.anims.play('idleRight', true)
-        this.player.flipX = false
-      } else if (prevVelocity.y < 0) {
-        this.player.anims.play('idleUp', true)
-      } else if (prevVelocity.y > 0) {
-        this.player.anims.play('idleDown', true)
-      }
+    // Emit movement to server
+    if (time - this.lastEmitTime > 5) {
+        this.socket.emit('movePlayer', {
+            x: this.player.x,
+            y: this.player.y,
+            animation: animation,
+            flipX: this.player.flipX,
+            lastDirection: this.lastDirection
+        })
+        this.lastEmitTime = time
     }
     if (Phaser.Input.Keyboard.JustDown(this.attackKey)) {
       this.handleAttack()
