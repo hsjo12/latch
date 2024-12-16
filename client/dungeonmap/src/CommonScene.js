@@ -122,12 +122,7 @@ export default class CommonScene extends Phaser.Scene {
     this.player.setBodySize(24, 28)
     this.player.setOffset(10, 13)
     this.cursors = this.input.keyboard.createCursorKeys()
-    this.anims.create({
-      key: 'idleDown',
-      frames: this.anims.generateFrameNumbers('player', { start: 0, end: 5 }),
-      frameRate: 10,
-      repeat: -1,
-    })
+   
 
     this.physics.add.collider(this.player, layer1)
     this.physics.add.collider(this.player, objectLayer, (a, b) => {
@@ -144,7 +139,20 @@ export default class CommonScene extends Phaser.Scene {
     this.cameras.main.setFollowOffset(-50, -50)
 
     this.anims.create({
+      key: 'idleDown',
+      frames: this.anims.generateFrameNumbers('player', { start: 0, end: 5 }),
+      frameRate: 10,
+      repeat: -1,
+    })
+    this.anims.create({
       key: 'idleRight',
+      frames: this.anims.generateFrameNumbers('player', { start: 6, end: 11 }),
+      frameRate: 10,
+      repeat: -1,
+    })
+
+    this.anims.create({
+      key: 'idleLeft',
       frames: this.anims.generateFrameNumbers('player', { start: 6, end: 11 }),
       frameRate: 10,
       repeat: -1,
@@ -172,6 +180,13 @@ export default class CommonScene extends Phaser.Scene {
     })
 
     this.anims.create({
+      key: 'walkLeft',
+      frames: this.anims.generateFrameNumbers('player', { start: 24, end: 29 }),
+      frameRate: 10,
+      repeat: -1,
+    })
+
+    this.anims.create({
       key: 'walkUp',
       frames: this.anims.generateFrameNumbers('player', { start: 30, end: 35 }),
       frameRate: 10,
@@ -180,21 +195,28 @@ export default class CommonScene extends Phaser.Scene {
 
     this.anims.create({
       key: 'attackDown',
-      frames: this.anims.generateFrameNumbers('player', { start: 36, end: 39 }),
+      frames: this.anims.generateFrameNumbers('player', { start: 36, end: 41 }),
       frameRate: 10,
       repeat: -1,
     })
 
     this.anims.create({
       key: 'attackRight',
-      frames: this.anims.generateFrameNumbers('player', { start: 42, end: 46 }),
+      frames: this.anims.generateFrameNumbers('player', { start: 42, end: 47 }),
+      frameRate: 10,
+      repeat: -1,
+    })
+
+    this.anims.create({
+      key: 'attackLeft',
+      frames: this.anims.generateFrameNumbers('player', { start: 42, end: 47 }),
       frameRate: 10,
       repeat: -1,
     })
 
     this.anims.create({
       key: 'attackUp',
-      frames: this.anims.generateFrameNumbers('player', { start: 48, end: 52 }),
+      frames: this.anims.generateFrameNumbers('player', { start: 48, end: 53 }),
       frameRate: 10,
       repeat: -1,
     })
@@ -208,7 +230,7 @@ export default class CommonScene extends Phaser.Scene {
     this.player.play('idleDown')
     this.handleSocketEvents()
 
-    // Add a attack kek
+    // Add a attack key
     this.attackKey = this.input.keyboard.addKey(
       Phaser.Input.Keyboard.KeyCodes.SPACE
     )
@@ -283,59 +305,6 @@ export default class CommonScene extends Phaser.Scene {
     this.otherPlayers[playerInfo.playerId] = otherPlayer
     console.log('Added other player:', playerInfo)
   }
-
-  createInventory() {
-    // Create inventory container
-    const padding = 10;
-    const cellSize = 40;
-    const rows = 4;
-    const cols = 6;
-    const width = (cellSize * cols) + (padding * 2);
-    const height = (cellSize * rows) + (padding * 2);
-    
-    // Position in center of screen
-    const x = this.cameras.main.centerX - width/2;
-    const y = this.cameras.main.centerY - height/2;
-    
-    // Create semi-transparent background
-    this.inventoryBg = this.add.rectangle(x, y, width, height, 0x000000)
-        .setOrigin(0, 0)
-        .setAlpha(0.7)
-        .setScrollFactor(0)
-        .setDepth(100);
-        
-    // Create grid cells
-    this.inventorySlots = [];
-    for (let row = 0; row < rows; row++) {
-        for (let col = 0; col < cols; col++) {
-            const slotX = x + padding + (col * cellSize);
-            const slotY = y + padding + (row * cellSize);
-            
-            // Create slot background
-            const slot = this.add.rectangle(slotX, slotY, cellSize - 2, cellSize - 2, 0x666666)
-                .setOrigin(0, 0)
-                .setAlpha(0.8)
-                .setScrollFactor(0)
-                .setDepth(101);
-                
-            this.inventorySlots.push(slot);
-        }
-    }
-    
-    // Hide inventory initially
-    this.hideInventory();
-  }
-
-  hideInventory() {
-    this.inventoryBg.setVisible(false);
-    this.inventorySlots.forEach(slot => slot.setVisible(false));
-  }
-
-  showInventory() {
-    this.inventoryBg.setVisible(true);
-    this.inventorySlots.forEach(slot => slot.setVisible(true));
-  }
-
   update(time, delta) {
     const speed = 80
     const prevVelocity = this.player.body.velocity.clone()
@@ -417,7 +386,7 @@ export default class CommonScene extends Phaser.Scene {
       this.handleAttack()
     }
 
-    // Add inventory toggle at the end of update
+    // Add inventory toggle
     if (Phaser.Input.Keyboard.JustDown(this.inventoryKey)) {
         if (this.inventoryBg.visible) {
             this.hideInventory();
@@ -425,6 +394,41 @@ export default class CommonScene extends Phaser.Scene {
             this.showInventory();
         }
     }
+
+    // Track last non-idle animation
+    if (this.player.anims.currentAnim) {
+        const currentAnim = this.player.anims.currentAnim.key;
+        if (!currentAnim.includes('idle')) {
+            this.lastAnimation = currentAnim;
+        }
+    }
+
+    // When no keys are pressed, convert last animation to idle
+    if (!this.cursors.left.isDown && 
+        !this.cursors.right.isDown && 
+        !this.cursors.up.isDown && 
+        !this.cursors.down.isDown) {
+        
+        if (this.lastAnimation) {
+            if (this.lastAnimation.includes('walkUp')) {
+                this.player.play('idleUp', true);
+            } else if (this.lastAnimation.includes('walkRight')) {
+                this.player.play('idleRight', true);
+            } else if (this.lastAnimation.includes('walkDown')) {
+                this.player.play('idleDown', true);
+            }
+        }
+    }
+
+    // Add lastAnimation to your existing socket emit
+    this.socket.emit('movePlayer', {
+        x: this.player.x,
+        y: this.player.y,
+        animation: this.player.anims.currentAnim.key,
+        lastAnimation: this.lastAnimation,
+        flipX: this.player.flipX,
+        currentScene: this.scene.key
+    });
   }
 
   handleAttack() {
@@ -435,8 +439,6 @@ export default class CommonScene extends Phaser.Scene {
     Object.keys(this.otherPlayers).forEach((id) => {
       const otherPlayer = this.otherPlayers[id]
       const distance = Phaser.Math.Distance.Between(
-        this.player.x,
-        this.player.y,
         otherPlayer.x,
         otherPlayer.y
       )
@@ -450,6 +452,62 @@ export default class CommonScene extends Phaser.Scene {
       // Adjust attack range as needed
       this.socket.emit('attackPlayer', closestPlayer.playerId)
       console.log('Attacking player:', closestPlayer.playerId)
+    }
+  }
+
+  createInventory() {
+    // Create inventory container
+    const padding = 10;
+    const cellSize = 40;
+    const rows = 4;
+    const cols = 6;
+    const width = (cellSize * cols) + (padding * 2);
+    const height = (cellSize * rows) + (padding * 2);
+    
+    // Position in center of screen
+    const x = this.cameras.main.centerX - width/2;
+    const y = this.cameras.main.centerY - height/2;
+    
+    // Create semi-transparent background
+    this.inventoryBg = this.add.rectangle(x, y, width, height, 0x000000)
+        .setOrigin(0, 0)
+        .setAlpha(0.7)
+        .setScrollFactor(0)
+        .setDepth(100);
+        
+    // Create grid cells
+    this.inventorySlots = [];
+    for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+            const slotX = x + padding + (col * cellSize);
+            const slotY = y + padding + (row * cellSize);
+            
+            // Create slot background
+            const slot = this.add.rectangle(slotX, slotY, cellSize - 2, cellSize - 2, 0x666666)
+                .setOrigin(0, 0)
+                .setAlpha(0.8)
+                .setScrollFactor(0)
+                .setDepth(101);
+                
+            this.inventorySlots.push(slot);
+        }
+    }
+    
+    // Hide inventory initially
+    this.hideInventory();
+  }
+
+  hideInventory() {
+    if (this.inventoryBg) {
+        this.inventoryBg.setVisible(false);
+        this.inventorySlots.forEach(slot => slot.setVisible(false));
+    }
+  }
+
+  showInventory() {
+    if (this.inventoryBg) {
+        this.inventoryBg.setVisible(true);
+        this.inventorySlots.forEach(slot => slot.setVisible(true));
     }
   }
 }

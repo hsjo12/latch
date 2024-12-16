@@ -126,21 +126,21 @@ this.game.scale.resize(256,256)
 
     this.anims.create({
       key: "attackDown",
-      frames: this.anims.generateFrameNumbers("player", { start: 36, end: 39 }),
+      frames: this.anims.generateFrameNumbers("player", { start: 36, end: 41 }),
       frameRate: 10,
       repeat: 1,
     });
 
     this.anims.create({
       key: "attackRight",
-      frames: this.anims.generateFrameNumbers("player", { start: 42, end: 46 }),
+      frames: this.anims.generateFrameNumbers("player", { start: 42, end: 47 }),
       frameRate: 10,
       repeat: -1,
     });
 
     this.anims.create({
       key: "attackUp",
-      frames: this.anims.generateFrameNumbers("player", { start: 48, end: 52 }),
+      frames: this.anims.generateFrameNumbers("player", { start: 48, end: 51 }),
       frameRate: 10,
       repeat: -1,
     });
@@ -265,19 +265,30 @@ this.game.scale.resize(256,256)
         this.healthBar.bar.y = this.player.y + yOffset;
         this.healthBar.bar.width = (this.player.life / 100) * width;
     }
-  }
 
-  handleSocketEvents() {
-    // ... keep existing socket events ...
-
-    // Check if this handler exists and has flipX
-    this.socket.on('playerMoved', (playerInfo) => {
-        if (this.otherPlayers[playerInfo.playerId]) {
-            const otherPlayer = this.otherPlayers[playerInfo.playerId];
-            otherPlayer.setPosition(playerInfo.x, playerInfo.y);
-            otherPlayer.anims.play(playerInfo.animation, true);
-            otherPlayer.flipX = playerInfo.flipX;  // Make sure this is here
+    // Track last non-idle animation
+    if (this.player.anims.currentAnim) {
+        const currentAnim = this.player.anims.currentAnim.key;
+        if (!currentAnim.includes('idle')) {
+            this.lastAnimation = currentAnim;
         }
-    });
+    }
+
+    // When no keys are pressed, convert last animation to idle
+    if (!this.cursors.left.isDown && 
+        !this.cursors.right.isDown && 
+        !this.cursors.up.isDown && 
+        !this.cursors.down.isDown) {
+        
+        if (this.lastAnimation) {
+            if (this.lastAnimation.includes('walkUp')) {
+                this.player.play('idleUp', true);
+            } else if (this.lastAnimation.includes('walkRight')) {
+                this.player.play('idleRight', true);
+            } else if (this.lastAnimation.includes('walkDown')) {
+                this.player.play('idleDown', true);
+            }
+        }
+    }
   }
 }
