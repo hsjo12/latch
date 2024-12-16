@@ -81,6 +81,8 @@ In order to deploy contract you will need:
 npx hardhat test --network shape/shape_sepolia/localhost
 ```
 
+## Deployment Addresses
+
 #### Mainnet
 
 | Name          | Address                                    |
