@@ -17,12 +17,6 @@ module.exports = {
       },
     },
   },
-  gasReporter: {
-    currency: "ETH",
-    enabled: false,
-    coinmarketcap: process.env.CMC_KEY,
-  },
-
   networks: {
     hardhat: {
       forking: {
@@ -36,7 +30,7 @@ module.exports = {
       accounts: [process.env.PK],
     },
 
-    shape_sep: {
+    shape_sepolia: {
       url: `https://shape-sepolia.g.alchemy.com/v2/${process.env.KEY}`,
       chainId: 11011,
       accounts: [process.env.PK],
