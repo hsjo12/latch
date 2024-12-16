@@ -122,7 +122,12 @@ export default class CommonScene extends Phaser.Scene {
     this.player.setBodySize(24, 28)
     this.player.setOffset(10, 13)
     this.cursors = this.input.keyboard.createCursorKeys()
-   
+    this.anims.create({
+      key: 'idleDown',
+      frames: this.anims.generateFrameNumbers('player', { start: 0, end: 5 }),
+      frameRate: 10,
+      repeat: -1,
+    })
 
     this.physics.add.collider(this.player, layer1)
     this.physics.add.collider(this.player, objectLayer, (a, b) => {
@@ -138,12 +143,7 @@ export default class CommonScene extends Phaser.Scene {
     this.cameras.main.startFollow(this.player, true)
     this.cameras.main.setFollowOffset(-50, -50)
 
-    this.anims.create({
-      key: 'idleDown',
-      frames: this.anims.generateFrameNumbers('player', { start: 0, end: 5 }),
-      frameRate: 10,
-      repeat: -1,
-    })
+
     this.anims.create({
       key: 'idleRight',
       frames: this.anims.generateFrameNumbers('player', { start: 6, end: 11 }),
@@ -261,11 +261,33 @@ export default class CommonScene extends Phaser.Scene {
     })
 
     socket.on('playerMoved', (playerInfo) => {
-      if (this.otherPlayers[playerInfo.playerId]) {
-        var otherPlayer = this.otherPlayers[playerInfo.playerId];
-        otherPlayer.setPosition(playerInfo.x, playerInfo.y);
-        otherPlayer.anims.play(playerInfo.animation, true);
-        otherPlayer.flipX = playerInfo.flipX;
+      try {
+        // Basic existence checks
+        if (!playerInfo || !this.otherPlayers) return;
+        
+        const otherPlayer = this.otherPlayers[playerInfo.playerId];
+        if (!otherPlayer || !otherPlayer.active) return;
+
+        // Position update
+        if (typeof otherPlayer.setPosition === 'function') {
+          otherPlayer.setPosition(playerInfo.x, playerInfo.y);
+        }
+
+        // Animation checks
+        if (playerInfo.animation && 
+          otherPlayer.anims && 
+          typeof otherPlayer.anims.play === 'function' && 
+          this.anims.exists(playerInfo.animation)) {
+          
+          otherPlayer.anims.play(playerInfo.animation, true);
+        }
+
+        // FlipX update
+        if (typeof playerInfo.flipX !== 'undefined') {
+          otherPlayer.flipX = playerInfo.flipX;
+        }
+      } catch (error) {
+        console.log('Error in playerMoved:', error);
       }
     })
 
