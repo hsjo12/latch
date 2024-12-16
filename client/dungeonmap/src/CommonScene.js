@@ -1,6 +1,7 @@
 import Phaser from 'phaser'
 import Level from './Level.js'
 import { io } from 'socket.io-client'
+const socketId = (import.meta.env.VITE_SOCKET_URL)
 
 export default class CommonScene extends Phaser.Scene {
   constructor() {
@@ -107,7 +108,9 @@ export default class CommonScene extends Phaser.Scene {
     // layer3.setScale(1, 1).setOrigin(0, 0);
     // layer3.setCollisionByProperty({ collider: true });
 
-    this.socket = io('http://localhost:3000', {
+
+
+    this.socket = io(socketId, {
       withCredentials: false,
     })
     this.player = this.physics.add
