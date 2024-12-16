@@ -37,19 +37,17 @@ In order to deploy contract you will need:
 
 ## Quick start
 
-Clone the repository and install all dependencies:
+1. **Clone the repository and install all dependencies**
 
-1. **Deploy smart contract:**
+   ```bash
+   git clone https://github.com/hsjo12/latch.git
+   cd smartContract
 
-```bash
-git clone https://github.com/hsjo12/latch.git
-cd smartContract
+   npm install
 
-npm install
+   ```
 
-```
-
-2. **Choose a Chain**
+2. **Deploy smart contracts**
 
    **On Mainnet**
 
@@ -73,7 +71,7 @@ npm install
    npx hardhat ignition deploy ignition/modules/deploy.js --network localhost
    ```
 
-3. **Run Latch Website**
+3. **Go to website folder and install all dependencies**
 
    ```bash
    cd ..
@@ -84,13 +82,13 @@ npm install
 
    ```
 
-4. **Build the project**
+4. **Build Latch website**
 
    ```bash
    npm run build
    ```
 
-5. **Start the project**
+5. **Start Latch website**
 
    ```bash
    npm run build
@@ -107,7 +105,7 @@ npm install
    - Add address in `1.mintLatchAndItems.js`.
 
    ```bash
-   npx hardhat run scripts/1.mintLatchAndItems.js --network shape/shape_sepolia/localhost
+   npx hardhat run scripts/1.mintLatchAndItems.js --network <network name (eg. shape, shape_sepolia, localhost)>
    ```
 
 2. **Import Items**
@@ -115,7 +113,7 @@ npm install
    - Add address in `2.importItems.js`.
 
    ```bash
-   npx hardhat run scripts/2.importItems.js --network shape/shape_sepolia/localhost
+   npx hardhat run scripts/2.importItems.js --network <network name (eg. shape, shape_sepolia, localhost)>
    ```
 
 3. **Export Items**
@@ -123,13 +121,13 @@ npm install
    - Add address in `3.exportItems.js`.
 
    ```bash
-   npx hardhat run scripts/3.exportItems.js --network shape/shape_sepolia/localhost
+   npx hardhat run scripts/3.exportItems.js --network <network name (eg. shape, shape_sepolia, localhost)>
    ```
 
 ## Test Contracts
 
 ```bash
-npx hardhat test --network shape/shape_sepolia/localhost
+npx hardhat test --network <network name (eg. shape, shape_sepolia, localhost)>
 ```
 
 ## Deployment Addresses
