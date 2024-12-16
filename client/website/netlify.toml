@@ -1,4 +1,5 @@
 [build]
-  base = "client/website"
-  command = "next build"
+  base = "/client/website/"
+  command = "npm run build"
   publish = ".next"
+
