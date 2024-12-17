@@ -71,7 +71,7 @@ export default function UserStatus() {
             <div className="marketBoxContents">
               <p className="text-center">LATCH BALANCE</p>
               <p className="text-center">
-                {convertUnit(userBalance.formattedLatch)} ETH
+                {convertUnit(userBalance.formattedLatch)} LATCH
               </p>
             </div>
             <div className="bg-[#1f378198] h-full flex flex-col justify-center items-center rounded-b-lg">
