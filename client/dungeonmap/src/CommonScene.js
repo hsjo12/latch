@@ -1,7 +1,7 @@
 import Phaser from 'phaser'
 import Level from './Level.js'
 import { io } from 'socket.io-client'
-const socketId = (import.meta.env.VITE_SOCKET_URL)
+const socketId = 'https://localhost:3000/'
 
 export default class CommonScene extends Phaser.Scene {
   constructor() {
@@ -224,6 +224,7 @@ export default class CommonScene extends Phaser.Scene {
       frameRate: 10,
       repeat: 0,
     })
+
     this.player.play('idleDown')
     this.handleSocketEvents()
 
@@ -383,6 +384,36 @@ export default class CommonScene extends Phaser.Scene {
         this.player.flipX = false
     }
 
+    this.input.keyboard.addListener('keydown-F',()=>{
+      if(this.lastDirection === 'Right'){
+        this.player.play('attackRight');
+      }else if(this.lastDirection === 'Left'){
+        this.player.play('attackLeft');
+      }else if (this.lastDirection === 'Up'){
+          this.player.play('attackUp');
+      }
+      else{
+        this.player.play('attackDown');
+      }
+    })
+    this.input.keyboard.addListener('keyup-F',()=>{
+      this.time.addEvent({
+        delay: 250,
+        callback: () => {
+          if(this.lastDirection === 'Right'){
+            this.player.play('idleRight');
+          }else if(this.lastDirection === 'Left'){
+            this.player.play('idleLeft');
+          }else if (this.lastDirection === 'Up'){
+            this.player.play('idleUp');
+          }
+          else{
+            this.player.play('idleDown');
+          }
+        },
+      });
+    })
+
     if (this.cursors.up.isDown) {
         this.player.body.setVelocityY(-speed)
         animation = 'walkUp'
@@ -408,7 +439,7 @@ export default class CommonScene extends Phaser.Scene {
     }
 
     // Play the animation
-    this.player.play(animation, true)
+    // this.player.play(animation, true)
 
     // Emit movement to server
     if (time - this.lastEmitTime > 5) {

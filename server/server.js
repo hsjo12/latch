@@ -5,8 +5,8 @@ const app = express()
 const httpServer = http.createServer(app)
 const io = new Server(httpServer, {
   cors: {
-    origin: 'https://latch-v1.vercel.app/',
-    methods: ["GET", "POST"],
+    origin: ['http://localhost:8080', 'http://127.0.0.1:8080'],
+    // methods: ["GET", "POST"],
     credentials: false,
   },
 })
