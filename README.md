@@ -29,10 +29,18 @@ In order to deploy contract you will need:
    - $ETH on Shape Mainnet or Shape Testnet.
    - Shape Mainnet or Shape Testnet RPC endpoint.
 
-2. **Create a `.env` file with the following content:**
+2. **Create a `.env` file in the smartContract folder with the following content:**
+
    ```env
    KEY="Alchemy RPC"
    PK="Deployer private key"
+   ```
+
+3. **Create a `.env` file in the website folder (/client/website) with the following content:**
+   ```env
+   NEXT_PUBLIC_CHAIN_ID=360
+   NEXT_PUBLIC_PROJECT_ID="Rewon project Id"
+   NEXT_PUBLIC_ALCHEMY_API_KEY="Alchemy api key"
    ```
 
 ## Quick start
