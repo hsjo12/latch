@@ -59,22 +59,22 @@ export default function TokenSwap() {
   }, []);
 
   const getETHFromTokens = (tokenAmount) => {
-    const pricePerToken = ethers.parseEther("0.001");
+    const pricePerToken = ethers.parseEther("0.00000001");
     const requiredValue =
       (pricePerToken * tokenAmount) / ethers.parseEther("1");
     return {
       amount: ethers.formatEther(requiredValue),
-      formattedAmount: parseFloat(ethers.formatEther(requiredValue)).toFixed(3),
+      formattedAmount: parseFloat(ethers.formatEther(requiredValue)).toFixed(9),
     };
   };
 
   const getTokensFromETH = (ethAmount) => {
-    const pricePerToken = ethers.parseEther("0.001");
+    const pricePerToken = ethers.parseEther("0.00000001");
     const tokenAmount = ethAmount / pricePerToken;
 
     return {
       amount: ethers.parseEther(String(tokenAmount)),
-      formattedAmount: parseFloat(tokenAmount).toFixed(3),
+      formattedAmount: parseFloat(tokenAmount).toFixed(9),
     };
   };
 

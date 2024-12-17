@@ -51,12 +51,11 @@ export default function ItemCard({ id, imgSrc, name, atk, def, spd, price }) {
       <div className="flex flex-col justify-center items-center mediaContainer">
         <Image
           priority
-          src={imgSrc}
+          src={imgSrc || "/image/notfound/notFound.png"}
           alt="Image"
           className="w-full !object-contain"
           fill
           sizes="100%"
-          optimized
           style={{ filter: "brightness(90%)" }}
         />
       </div>

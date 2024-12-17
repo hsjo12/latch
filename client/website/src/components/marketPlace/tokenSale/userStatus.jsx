@@ -6,6 +6,7 @@ import { Contract, ethers } from "ethers";
 import latchJson from "../../../abis/latch.json";
 import { convertUnit } from "@/utils/utils";
 import { ContextAPI } from "@/utils/contextAPI/latchContextAPI";
+import Loading from "@/components/loading/loading";
 require("dotenv").config();
 export default function UserStatus() {
   const { update } = useContext(ContextAPI);
@@ -16,10 +17,10 @@ export default function UserStatus() {
     latch: 0,
     formattedLatch: 0,
   });
-
+  const [loading, setLoading] = useState(false);
   useEffect(() => {
     if (!isConnected) return;
-
+    setLoading(true);
     (async () => {
       try {
         const provider = await getProvider(process.env.NEXT_PUBLIC_CHAIN_ID);
@@ -33,7 +34,9 @@ export default function UserStatus() {
           latch: latchBalance,
           formattedLatch: ethers.formatEther(latchBalance),
         });
+        setLoading(false);
       } catch (error) {
+        setLoading(false);
         console.log(error);
       }
     })();
@@ -45,32 +48,38 @@ export default function UserStatus() {
         <h1 className="w-full subTitle2 marketBoxHead">User Status</h1>
       </div>
       {isConnected ? (
-        <div className="w-full flex flex-col justify-center pt-1">
-          <div className="marketBoxContents">
-            <p className="text-center">User</p>
-            <p className="text-center">
-              {`${address && address.slice(0, 6)}...${
-                address && address.slice(-4)
-              }`}
-            </p>
+        loading ? (
+          <div className="w-full h-full flex flex-col justify-center items-center min-h-[150px] md:min-h-0">
+            <Loading />
           </div>
-          <div className="marketBoxContents">
-            <p className="text-center">ETH BALANCE</p>
-            <p className="text-center">
-              {convertUnit(userBalance.formattedEth)} ETH
-            </p>
+        ) : (
+          <div className="w-full flex flex-col justify-center pt-1">
+            <div className="marketBoxContents">
+              <p className="text-center">User</p>
+              <p className="text-center">
+                {`${address && address.slice(0, 6)}...${
+                  address && address.slice(-4)
+                }`}
+              </p>
+            </div>
+            <div className="marketBoxContents">
+              <p className="text-center">ETH BALANCE</p>
+              <p className="text-center">
+                {convertUnit(userBalance.formattedEth)} ETH
+              </p>
+            </div>
+            <div className="marketBoxContents">
+              <p className="text-center">LATCH BALANCE</p>
+              <p className="text-center">
+                {convertUnit(userBalance.formattedLatch)} ETH
+              </p>
+            </div>
+            <div className="bg-[#1f378198] h-full flex flex-col justify-center items-center rounded-b-lg">
+              <p>🌟 WELCOME TO LATCH 🌟</p>
+              <p>🔥 LET'S PLAY LATCH 🔥</p>
+            </div>
           </div>
-          <div className="marketBoxContents">
-            <p className="text-center">LATCH BALANCE</p>
-            <p className="text-center">
-              {convertUnit(userBalance.formattedLatch)} ETH
-            </p>
-          </div>
-          <div className="bg-[#1f378198] h-full flex flex-col justify-center items-center rounded-b-lg">
-            <p>WELCOME TO LATCH</p>
-            <p>LET'S PLAY LATCH</p>
-          </div>
-        </div>
+        )
       ) : (
         <None />
       )}

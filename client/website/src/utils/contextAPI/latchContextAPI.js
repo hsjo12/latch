@@ -15,6 +15,8 @@ export function LatchContextAPI({ children }) {
   const [animationOnBySection, setAnimationOnBySection] = useState({});
   const [update, setUpdate] = useState(null);
   const [loadingScreenOn, setLoadingScreenOn] = useState(false);
+  const [unImportedItemList, setUnImportedItemList] = useState(null);
+  const [importedItemList, setImportedItemList] = useState(null);
 
   return (
     <ContextAPI.Provider
@@ -34,6 +36,10 @@ export function LatchContextAPI({ children }) {
         setAnimationOnBySection,
         loadingScreenOn,
         setLoadingScreenOn,
+        unImportedItemList,
+        setUnImportedItemList,
+        importedItemList,
+        setImportedItemList,
       }}
     >
       {children}

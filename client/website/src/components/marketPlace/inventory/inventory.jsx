@@ -3,79 +3,126 @@ import None from "../none";
 import InventoryCard from "./inventoryCard";
 import { useAppKitAccount } from "@reown/appkit/react";
 import { getProvider } from "@/utils/provider/provider";
-
 import { Contract } from "ethers";
-import { fetchAllTheUserImportedItems } from "@/utils/utils";
-import itemsJson from "../../../abis/items.json";
+import {
+  fetchAllTheUserImportedItems,
+  fetchAllTheUserImportedItemAddresses,
+} from "@/utils/utils";
+
 import bridgeJson from "../../../abis/bridge.json";
 import { ContextAPI } from "@/utils/contextAPI/latchContextAPI";
-require("dotenv").config();
+import Loading from "@/components/loading/loading";
+import { fetchMetadata, fetchNFTs } from "@/utils/alchemy/nftFetch";
 
 export default function Inventory() {
-  const { update } = useContext(ContextAPI);
+  const {
+    unImportedItemList,
+    setUnImportedItemList,
+    importedItemList,
+    setImportedItemList,
+  } = useContext(ContextAPI);
   const { address, isConnected } = useAppKitAccount();
-  const idList = [0, 1, 2];
-  const itemName = ["sword#0", "shield#1", "boots#2"];
-  const [itemBalanceList, setItemBalanceList] = useState([]);
+
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!isConnected) return;
-    (async () => {
-      const provider = await getProvider(process.env.NEXT_PUBLIC_CHAIN_ID);
-      const item = new Contract(itemsJson.address, itemsJson.abi, provider);
-      const bridge = new Contract(bridgeJson.address, bridgeJson.abi, provider);
-      const itemBalance = [];
+    if (!isConnected || !address) return;
 
-      const importedItem = await fetchAllTheUserImportedItems(
-        bridge,
-        address,
-        item.target
-      );
+    const loadInventory = async () => {
+      try {
+        setLoading(true);
+        const provider = await getProvider(process.env.NEXT_PUBLIC_CHAIN_ID);
+        const bridge = new Contract(
+          bridgeJson.address,
+          bridgeJson.abi,
+          provider
+        );
 
-      await Promise.all(
-        idList.map(async (v) => {
-          const isImported = await bridge.isItemImported(
-            address,
-            item.target,
-            v
-          );
-          const balance = await item.balanceOf(address, v);
-          if (BigInt(balance) !== 0n) {
-            itemBalance.push({ id: v, balance, isImported });
-          }
-        })
-      );
-      itemBalance.sort((a, b) => a.id - b.id);
-      setItemBalanceList([...itemBalance, ...importedItem]);
-    })();
-  }, [isConnected, address, update]);
+        // Fetch unimported NFTs
+        const notImportedNfts = await fetchNFTs(address);
+        setUnImportedItemList(notImportedNfts);
+
+        // Fetch imported NFT addresses
+        const importedItemAddresses =
+          await fetchAllTheUserImportedItemAddresses(bridge, address);
+        const importedNfts = {};
+
+        // Fetch imported NFT IDs
+        await Promise.all(
+          importedItemAddresses.map(async (itemAddress) => {
+            const ids = await fetchAllTheUserImportedItems(
+              bridge,
+              address,
+              itemAddress
+            );
+            importedNfts[itemAddress] = ids;
+          })
+        );
+
+        // Fetch metadata for imported NFTs
+        const importedItems = await Promise.all(
+          Object.entries(importedNfts).flatMap(([itemAddress, ids]) =>
+            ids.map((id) => fetchMetadata(itemAddress, id))
+          )
+        );
+
+        setImportedItemList(importedItems.filter(Boolean));
+      } catch (error) {
+        console.error("Error loading inventory:", error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadInventory();
+  }, [isConnected, address]);
 
   return (
-    <div className="marketBox w-full mx-auto ">
-      <div className="w-full flex flex-col justify-center items-start ">
+    <div className="marketBox w-full mx-auto">
+      <div className="w-full flex flex-col justify-center items-start">
         <h1 className="w-full subTitle2 marketBoxHead">Inventory</h1>
       </div>
 
       {isConnected ? (
-        itemBalanceList.length > 0 ? (
-          <div className="w-full grid grid-cols-2 md:grid-cols-4 justify-center p-4 gap-5 max-h-[700px] overflow-y-scroll customizedScrollbar">
-            {itemBalanceList.map((v, i) => (
+        loading ? (
+          <div className="w-full flex flex-col justify-center items-center min-h-[300px]">
+            <Loading />
+          </div>
+        ) : unImportedItemList.length > 0 || importedItemList.length > 0 ? (
+          <div className="w-full grid grid-cols-2 md:grid-cols-4 gap-5 p-4 max-h-[700px] overflow-y-scroll customizedScrollbar">
+            {/* Unimported Items */}
+
+            {unImportedItemList.map((item, index) => (
               <InventoryCard
-                key={i}
-                id={v.id}
-                imgSrc={`/images/items/${v.id}.png`}
-                name={itemName[v.id]}
-                isImported={v.isImported}
+                key={`${item.itemAddress}_${item.tokenId}_${index}`}
+                itemAddress={item.itemAddress}
+                tokenId={item.tokenId}
+                imgSrc={item.imgSrc}
+                name={item.tokenName}
+                isImported={false}
+              />
+            ))}
+
+            {/* Imported Items */}
+
+            {importedItemList.map((item, index) => (
+              <InventoryCard
+                key={`${item.itemAddress}_${item.tokenId}_${index}`}
+                itemAddress={item.itemAddress}
+                tokenId={item.tokenId}
+                imgSrc={item.imgSrc}
+                name={item.tokenName}
+                isImported={true}
               />
             ))}
           </div>
         ) : (
-          <div className="w-full min-h-[400px] flex flex-col justify-center items-center">
+          <div className="w-full min-h-[300px] flex flex-col justify-center items-center">
             <None />
           </div>
         )
       ) : (
-        <div className="w-full min-h-[400px] flex flex-col justify-center items-center">
+        <div className="w-full min-h-[300px] flex flex-col justify-center items-center">
           <None />
         </div>
       )}

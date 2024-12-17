@@ -16,10 +16,10 @@ export default function Menu({ setMenuOn, currentPosition, scrollToSection }) {
           <IoMdClose />
         </button>
         <div className="flex flex-col justify-center items-center gap-3 font-bebas_neue">
-          {["home", "about", "guide", "roadmap"].map((section) =>
+          {["home", "about", "guide", "roadmap"].map((section, i) =>
             pathname === "/" ? (
               <button
-                key={section}
+                key={i}
                 className={`textBtn ${
                   currentPosition === section ? "text-highlight-color" : ""
                 }`}

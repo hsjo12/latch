@@ -11,6 +11,7 @@
   "dependencies": {
     "@reown/appkit": "^1.5.3",
     "@reown/appkit-adapter-ethers": "^1.5.3",
+    "alchemy-sdk": "^3.5.0",
     "dotenv": "^16.4.7",
     "ethers": "^6.13.4",
     "next": "15.1.0",

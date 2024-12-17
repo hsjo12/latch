@@ -1,7 +1,11 @@
 const networkInfo = {
   360: {
-    // ETH
+    // Shape
     rpc: "https://mainnet.shape.network",
+  },
+  11011: {
+    // Shape Sep
+    rpc: "https://sepolia.shape.network",
   },
   31337: {
     // Local
