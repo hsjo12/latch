@@ -107,8 +107,8 @@ export default class CommonScene extends Scene {
     // layer3.setScale(1, 1).setOrigin(0, 0);
     // layer3.setCollisionByProperty({ collider: true });
 
-    this.socket = io("https://latch-server.glitch.me/", {
-      withCredentials: true,
+    this.socket = io("https://latch-server.glitch.me", {
+      withCredentials: false,
     });
     this.player = this.physics.add
       .sprite(this.game.config.width / 2, this.game.config.height / 2, "player")
