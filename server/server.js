@@ -5,9 +5,9 @@ const app = express()
 const httpServer = http.createServer(app)
 const io = new Server(httpServer, {
   cors: {
-    origin: 'https://latch-v1.vercel.app/',
+    origin: 'https://latch.netlify.app/game',
     methods: ["GET", "POST"],
-    credentials: false,
+    credentials: true,
   },
 })
 
@@ -72,6 +72,6 @@ io.on('connection', (socket) => {
   })
 })
 
-httpServer.listen(3000, () => {
-  console.log('Listening on port 3000')
+httpServer.listen(3001, () => {
+  console.log('Server running on port 3001')
 })
