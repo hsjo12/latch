@@ -1,9 +1,10 @@
-import "../styles/globals.css";
-import "../styles/styles.css";
-import "../styles/texts.css";
-import "../styles/buttons.css";
-import "../styles/boxes.css";
-import "../styles/animation.css";
+import "../styles/website/globals.css";
+import "../styles/website/styles.css";
+import "../styles/website/texts.css";
+import "../styles/website/buttons.css";
+import "../styles/website/boxes.css";
+import "../styles/website/animation.css";
+import "../styles/game/styles.css";
 import Web3Modal from "../utils/reown/web3Modal";
 import { LatchContextAPI } from "../utils/contextAPI/latchContextAPI";
 import { ToastContainer } from "react-toastify";

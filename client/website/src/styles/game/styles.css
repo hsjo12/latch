@@ -1,0 +1,36 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+#input-box {
+  width: 300px;
+  height: 250px;
+  padding: 20px;
+  padding-left: 30px;
+  position: absolute;
+  left: calc(50% - 150px);
+  box-sizing: border-box;
+  background: #3e8949;
+  border: 3px solid #792e2f;
+  border-radius: 8px;
+  color: #e8bb9e;
+  display: flex;
+  /*flex-direction: column;*/
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+}
+
+#input-box button {
+  width: 100%;
+  margin: 10px auto;
+  background-color: #e4a672;
+  border: none;
+  border-radius: 5px;
+  color: #3f2832;
+  padding: 8px 4px;
+}
+
+#input-box button:first-child {
+  margin: 20px auto;
+}
