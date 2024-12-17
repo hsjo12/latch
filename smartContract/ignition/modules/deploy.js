@@ -52,7 +52,7 @@ module.exports = buildModule("LockModule", (m) => {
   const raid = m.contract("Raid", [latch, deployer, raidVault, teamVault]);
 
   const pvpVault = m.contract("PvpVault", [latch, deployer]);
-  const pvp = m.contract("Pvp", [latch, deployer, raidVault, teamVault]);
+  const pvp = m.contract("Pvp", [latch, deployer, pvpVault, teamVault]);
 
   m.call(latch, "grantRole", [TOKEN_MINTER, tokenMarket]);
   m.call(bridgeVault, "grantRole", [MANAGER, bridge]);
@@ -62,7 +62,7 @@ module.exports = buildModule("LockModule", (m) => {
   m.call(pvp, "grantRole", [MANAGER, SERVER_ADDRESS]);
   m.call(raid, "grantRole", [MANAGER, SERVER_ADDRESS]);
 
-  // m.call(items, "registerForGasback", []);
+  m.call(items, "registerForGasback", []);
 
   m.call(items, "setBaseURI", [
     "https://rose-cheap-jaguar-233.mypinata.cloud/ipfs/bafybeihu5p24wubukadze54afr4t44bxdw2tqk6th4f5he7jkxvdqye6wy/",

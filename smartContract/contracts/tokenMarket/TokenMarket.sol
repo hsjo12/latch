@@ -20,7 +20,7 @@ contract TokenMarket is ReentrancyGuard, AccessControl {
     error insufficientAmount();
     error transactionFailed();
 
-    uint256 public pricePerToken = 0.001 ether;
+    uint256 public pricePerToken = 0.00000001 ether;
 
     constructor(ILatch _saleToken) {
         SALE_TOKEN =  _saleToken;
