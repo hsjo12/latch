@@ -1,9 +1,8 @@
-import Phaser from 'phaser'
+import { Scene, Physics, Input, Math as PhaserMath } from 'phaser'
 import Level from './Level.js'
 import { io } from 'socket.io-client'
-const socketId = (import.meta.env.VITE_SOCKET_URL)
-
-export default class CommonScene extends Phaser.Scene {
+const socketUrl = 'https://latch.netlify.app/game';
+export default class CommonScene extends Scene {
   constructor() {
     super('CommonScene')
     this.player = null
@@ -110,8 +109,8 @@ export default class CommonScene extends Phaser.Scene {
 
 
 
-    this.socket = io(socketId, {
-      withCredentials: false,
+    this.socket = io('http://localhost:3001', {
+      withCredentials: true,
     })
     this.player = this.physics.add
       .sprite(this.game.config.width / 2, this.game.config.height / 2, 'player')
@@ -161,6 +160,7 @@ export default class CommonScene extends Phaser.Scene {
     // this.cameras.main.setBounds(0, 0, +this.game.config.width, +this.game.config.height);
     this.cameras.main.startFollow(this.player, true)
     this.cameras.main.setFollowOffset(-50, -50)
+    this.player.setOrigin(0.5, 0.5)
 
     this.anims.create({
       key: 'idleRight',
@@ -421,12 +421,12 @@ export default class CommonScene extends Phaser.Scene {
         })
         this.lastEmitTime = time
     }
-    if (Phaser.Input.Keyboard.JustDown(this.attackKey)) {
+    if (Input.Keyboard.JustDown(this.attackKey)) {
       this.handleAttack()
     }
 
     // Add inventory toggle at the end of update
-    if (Phaser.Input.Keyboard.JustDown(this.inventoryKey)) {
+    if (Input.Keyboard.JustDown(this.inventoryKey)) {
         if (this.inventoryBg.visible) {
             this.hideInventory();
         } else {
@@ -442,7 +442,7 @@ export default class CommonScene extends Phaser.Scene {
 
     Object.keys(this.otherPlayers).forEach((id) => {
       const otherPlayer = this.otherPlayers[id]
-      const distance = Phaser.Math.Distance.Between(
+      const distance = PhaserMath.Distance.Between(
         this.player.x,
         this.player.y,
         otherPlayer.x,

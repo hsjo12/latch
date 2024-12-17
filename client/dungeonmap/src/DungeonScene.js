@@ -1,7 +1,7 @@
-import Phaser from "phaser";
+import { Scene } from 'phaser';
 import Level from "./Level.js";
 
-export default class DungeonScene extends Phaser.Scene {
+export default class DungeonScene extends Scene {
   constructor() {
     super("DungeonScene");
     this.player = null;

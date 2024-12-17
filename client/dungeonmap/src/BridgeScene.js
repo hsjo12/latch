@@ -1,7 +1,7 @@
-import Phaser from "phaser";
+import { Scene } from 'phaser';
 import Level from "./Level.js";
 
-export default class BridgeScene extends Phaser.Scene {
+export default class BridgeScene extends Scene {
     constructor() {
         super("BridgeScene");
         this.player = null;
