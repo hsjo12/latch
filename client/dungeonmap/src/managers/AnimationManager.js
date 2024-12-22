@@ -16,6 +16,7 @@ export class AnimationManager {
         { key: 'attackRight', start: 42, end: 46 },
         { key: 'attackUp', start: 48, end: 52 },
       ],
+      die: [{ key: 'die', start: 54, end: 56 }],
     }
 
     Object.values(animations)
@@ -28,7 +29,7 @@ export class AnimationManager {
             end: anim.end,
           }),
           frameRate: 10,
-          repeat: anim.key.startsWith('attack') ? 0 : -1,
+          repeat: anim.key === 'die' || anim.key.startsWith('attack') ? 0 : -1,
         })
       })
   }

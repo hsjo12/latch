@@ -57,7 +57,7 @@ io.on('connection', (socket) => {
       players[socket.id].animation = data.animation
       players[socket.id].lastDirection = data.direction
       players[socket.id].isAttacking = true
-      
+
       // After attack animation duration (roughly 400ms for 10fps, 4 frames)
       setTimeout(() => {
         if (players[socket.id]) {
@@ -76,9 +76,13 @@ io.on('connection', (socket) => {
       console.log('Attack animation broadcasted')
 
       if (players[targetId].life <= 0) {
+        players[targetId].animation = 'die'
         console.log('Player defeated:', targetId)
         io.emit('playerDefeated', targetId)
-        delete players[targetId]
+        // Give time for death animation to play before removing player
+        setTimeout(() => {
+          delete players[targetId]
+        }, 1000)
       } else {
         io.emit('playerAttacked', {
           attacker: socket.id,

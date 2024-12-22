@@ -1,5 +1,6 @@
 import { AnimationManager } from './managers/AnimationManager'
 import { PlayerManager } from './managers/PlayerManager'
+import { CombatManager} from './managers/CombatManager'
 import Level from './Level.js'
 import { io } from 'socket.io-client'
 const socketId = 'http://localhost:3000'
@@ -196,12 +197,7 @@ export default class CommonScene extends Phaser.Scene {
       repeat: -1,
     })
 
-    this.anims.create({
-      key: 'die',
-      frames: this.anims.generateFrameNumbers('player', { start: 54, end: 56 }),
-      frameRate: 10,
-      repeat: 0,
-    })
+    
 
     AnimationManager.createAnimations(this)
     this.player.play('idleDown')
@@ -291,6 +287,7 @@ export default class CommonScene extends Phaser.Scene {
         this.otherPlayers[playerId].destroy()
         delete this.otherPlayers[playerId]
         console.log('Player defeated:', playerId)
+        CombatManager.handlePlayerDeath(this, playerId)
       }
     })
 
