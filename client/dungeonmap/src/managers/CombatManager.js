@@ -1,6 +1,7 @@
 // src/managers/CombatManager.js
 export class CombatManager {
   static handlePlayerDeath(scene, playerId) {
+    console.log('Local player died')
     if (playerId === scene.socket.id) {
       // Local player death
       scene.player.isAttacking = false

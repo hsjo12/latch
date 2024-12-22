@@ -283,12 +283,9 @@ export default class CommonScene extends Phaser.Scene {
     })
 
     socket.on('playerDefeated', (playerId) => {
-      if (this.otherPlayers[playerId]) {
-        this.otherPlayers[playerId].destroy()
-        delete this.otherPlayers[playerId]
-        console.log('Player defeated:', playerId)
         CombatManager.handlePlayerDeath(this, playerId)
-      }
+        console.log('Player defeated:', playerId)
+      
     })
 
     socket.on('playerDisconnected', (playerId) => {
