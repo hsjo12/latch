@@ -6,7 +6,6 @@ const httpServer = http.createServer(app)
 const io = new Server(httpServer, {
   cors: {
     origin: ['http://localhost:8080', 'http://127.0.0.1:8080'],
-    // methods: ["GET", "POST"],
     credentials: false,
   },
 })
@@ -16,7 +15,6 @@ const players = {}
 io.on('connection', (socket) => {
   console.log('A user connected:', socket.id)
 
-  // Add new player to the players object
   players[socket.id] = {
     playerId: socket.id,
     x: 400,
@@ -24,34 +22,61 @@ io.on('connection', (socket) => {
     life: 100,
     attack: 10,
     weapon: 'sword',
-    animation: 'idleDown'
+    animation: 'idleDown',
+    lastDirection: 'Down',
+    flipX: false,
+    isAttacking: false,
   }
 
-  // Send the current players to the new player
   socket.emit('currentPlayers', players)
-
-  // Notify existing players of the new player
   socket.broadcast.emit('newPlayer', players[socket.id])
 
-  // Handle player movement
   socket.on('movePlayer', (movementData) => {
     if (players[socket.id]) {
       players[socket.id].x = movementData.x
       players[socket.id].y = movementData.y
       players[socket.id].animation = movementData.animation
       players[socket.id].flipX = movementData.flipX
-      io.emit('playerMoved', players[socket.id])
+      players[socket.id].lastDirection = movementData.lastDirection
+      io.emit('playerMoved', {
+        ...players[socket.id],
+        playerId: socket.id,
+      })
     }
   })
 
-  // Handle player attack
-  socket.on('attackPlayer', (targetId) => {
+  socket.on('attackPlayer', (data) => {
+    const targetId = data.targetId
+    console.log('Attack event received:', {
+      attacker: socket.id,
+      target: targetId,
+      animation: data.animation,
+    })
     if (players[socket.id] && players[targetId]) {
       players[targetId].life -= players[socket.id].attack
-      // log the both players life
-      console.log('Attacker:', players[socket.id].life)
-      console.log('Target:', players[targetId].life)
+      players[socket.id].animation = data.animation
+      players[socket.id].lastDirection = data.direction
+      players[socket.id].isAttacking = true
+      
+      // After attack animation duration (roughly 400ms for 10fps, 4 frames)
+      setTimeout(() => {
+        if (players[socket.id]) {
+          players[socket.id].isAttacking = false
+          players[socket.id].animation = 'idle' + data.direction
+        }
+      }, 400)
+      // Broadcast attack animation to ALL players including attacker
+      io.emit('playerAttackAnimation', {
+        attacker: socket.id,
+        target: targetId,
+        animation: data.animation,
+        direction: data.direction,
+      })
+
+      console.log('Attack animation broadcasted')
+
       if (players[targetId].life <= 0) {
+        console.log('Player defeated:', targetId)
         io.emit('playerDefeated', targetId)
         delete players[targetId]
       } else {
@@ -64,7 +89,6 @@ io.on('connection', (socket) => {
     }
   })
 
-  // Handle player disconnection
   socket.on('disconnect', () => {
     console.log('A user disconnected:', socket.id)
     delete players[socket.id]
