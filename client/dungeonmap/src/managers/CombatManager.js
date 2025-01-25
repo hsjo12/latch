@@ -21,5 +21,12 @@ export class CombatManager {
         console.log('Other player died:', playerId)
       })
     }
+
+    // Emit kill for XP
+    if (killerId) {
+        scene.socket.emit('playerKilled', {
+            killerId: killerId
+        });
+    }
   }
 }
