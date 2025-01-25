@@ -1,12 +1,12 @@
 import Phaser from "phaser";
-import DungeonScene from "./DungeonScene.js";
-import CommonScene from "./CommonScene.js";
-import BridgeScene from "./BridgeScene.js";
+import DungeonScene from "./DungeonScene";
+import CommonScene from "./CommonScene";
+import BridgeScene from "./BridgeScene";
+import BackgroundScene from "./managers/backgroundscene";
 import io from "socket.io-client";
-
 const socket = io();
 
-export default new Phaser.Game({
+const config = {
   type: Phaser.AUTO,
   width: 800,
   height: 600,
@@ -17,7 +17,7 @@ export default new Phaser.Game({
       debug: false,
     },
   },
-  scene: [CommonScene, DungeonScene, BridgeScene],
+  scene: [BackgroundScene, CommonScene, DungeonScene, BridgeScene],
   scale: {
     zoom: 3,
   },
@@ -26,4 +26,7 @@ export default new Phaser.Game({
       window.socket = socket;
     }
   }
-});
+};
+
+// Create game instance with config
+new Phaser.Game(config);
